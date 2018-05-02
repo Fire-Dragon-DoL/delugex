@@ -6,9 +6,9 @@ defmodule Ex1.Consumer do
     handler: __MODULE__,
     event_transformer: Ex1.Events
 
-  def handle(%Ex1.Events.Created{} = created) do
+  def handle(%Ex1.Task.Events.Created{} = created) do
     # handle the event
     # write some other event
-    EspEx.EventBus.write(%Ex1.Events.Started{})
+    EspEx.EventBus.write(%Ex1.Events.Task.Started{})
   end
 end

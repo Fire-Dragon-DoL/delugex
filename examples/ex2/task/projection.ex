@@ -1,5 +1,7 @@
 defmodule Ex2.Task.Projection do
-  def apply(%Ex1.Events.Created{} = created, entity) do
+  alias Ex2.Task.Events
+
+  def apply(%Events.Created{} = created, entity) do
     # do something with entity and created
     Ex2.Task.created(entity, created.time)
     # return new entity

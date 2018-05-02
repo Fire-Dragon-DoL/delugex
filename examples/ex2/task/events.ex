@@ -1,4 +1,4 @@
-defmodule Ex2.Events do
+defmodule Ex2.Task.Events do
   defmodule Created do
     defstruct [:id, :position, :metadata, :campaign_id, :name]
   end

@@ -1,14 +1,14 @@
-defmodule Ex1.Events do
+defmodule Ex1.Task.Events do
   use EspEx.EventTransformer, events: __MODULE__
 
   defmodule Created do
-    use Ex1.Event
+    use EspEx.Event
 
     defevent([:campaign_id, :name])
   end
 
   defmodule Started do
-    use Ex1.Event
+    use EspEx.Event
 
     defevent([:campaign_id, :start_time])
   end

@@ -1,8 +1,8 @@
-defmodule Ex1.Task do
+defmodule Ex2.Task do
   defstruct [:name, :created_at]
 
   def new do
-    %Ex1.Task{}
+    %Ex2.Task{}
   end
 
   def created(task, time) do

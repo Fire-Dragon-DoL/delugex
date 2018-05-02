@@ -1,6 +1,14 @@
 defmodule Ex1.Consumer do
+  use EspEx.Handler, handle_unhandled: true
+
   use EspEx.Consumer,
     identifier: __MODULE__,
-    handler: Ex1.Handler,
-    event_transformer: Ex1.EventTransformer
+    handler: __MODULE__,
+    event_transformer: Ex1.Events
+
+  def handle(%Ex1.Events.Created{} = created) do
+    # handle the event
+    # write some other event
+    EspEx.EventBus.write(%Ex1.Events.Started{})
+  end
 end

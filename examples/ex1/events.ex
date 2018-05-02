@@ -1,4 +1,6 @@
 defmodule Ex1.Events do
+  use EspEx.EventTransformer, events: __MODULE__
+
   defmodule Created do
     use Ex1.Event
 

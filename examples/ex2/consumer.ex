@@ -3,11 +3,18 @@ defmodule Ex2.Consumer do
 
   def start_link(_) do
     EspEx.Consumer.start_link(__MODULE__, identifier: __MODULE__)
+    GenServer.cast(:read_next)
   end
 
-  def on(raw_event) do
+  def handle_cast(:read_next) do
+    raw_event = EspEx.Consumer.read_next()
+    GenServer.cast(:event_found, raw_event)
+  end
+
+  def handle_cast(:event_found, raw_event) do
     event = Ex1.Events.transform(raw_event.type, raw_event)
     handle(event)
+    GenServer.cast(:read_next)
   end
 
   def handle(%Ex2.Events.Created{} = created) do

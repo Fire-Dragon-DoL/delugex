@@ -2,6 +2,7 @@ defmodule Ex1.Consumer do
   use EspEx.Handler, handle_unhandled: true
 
   use EspEx.Consumer,
+    category: "task",
     identifier: __MODULE__,
     handler: __MODULE__,
     event_transformer: Ex1.Events

@@ -19,3 +19,6 @@ Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_do
 and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
 be found at [https://hexdocs.pm/esp_ex](https://hexdocs.pm/esp_ex).
 
+## Licensing
+
+This code is inspired and partially reimplements [eventide](https://eventide-project.org/), as such is also subject to the [eventide LICENSE](eventide-LICENSE)

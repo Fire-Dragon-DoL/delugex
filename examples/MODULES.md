@@ -5,19 +5,23 @@
   - new (args):
     - category,
     - optional identifier (nil default),
-    - optional types (empty array default)
+    - optional types (empty MapSet default)
   - from_string(string) returns %StreamName
   - to_string(%StreamName)
   - has_all_types checks if a list is a sublist of stuct types
-  - is_category_stream
+  - is_category
   - position_identifier(%StreamName, uint) returns string ("foo-123/1")
 - EspEx.EventBus
   - @callback write
+  - @callback write_initial
   - @callback read_last
   - @callback read_batch
   - @callback read_version
+  - write_initial (write with expected_version nil)
+  - use macro that adds write_initial to the module (Postgres) and
+    @behavior EspEx.EventBus
   - EspEx.EventBus.Postgres
-    - @behavior EspEx.EventBus
+    - use EspEx.EventBus
     - write
     - read_last
     - read_batch

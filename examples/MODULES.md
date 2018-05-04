@@ -18,7 +18,7 @@
   - @callback read_batch
   - @callback read_version
   - write_initial (write with expected_version nil)
-  - use macro that adds write_initial to the module (Postgres) and
+  - use macro that adds write_initial to the module (e.g. Postgres) and
     @behavior EspEx.EventBus
   - EspEx.EventBus.Postgres
     - use EspEx.EventBus

@@ -1,11 +1,11 @@
 # Modules
 
 - EspEx.StreamName
-  - defstruct [:category, :identifier, :types]
+  - defstruct [:category (string), :identifier (string), :types (ordset)]
   - new (args):
     - category,
     - optional identifier (nil default),
-    - optional types (empty MapSet default)
+    - optional types (empty list, gets converted to ordset from a list)
   - from_string(string) returns %StreamName
   - to_string(%StreamName)
   - has_all_types checks if a list is a sublist of stuct types

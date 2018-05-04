@@ -167,4 +167,51 @@ defmodule EspEx.StreamNameTest do
       end
     end
   end
+
+  describe "StreamName.new" do
+    test "raises when category is blank" do
+      assert_raise ArgumentError, fn ->
+        new("       ")
+      end
+    end
+
+    test "raises when category is not a string" do
+      assert_raise FunctionClauseError, fn ->
+        new(123)
+      end
+    end
+
+    test "raises when category is nil" do
+      assert_raise FunctionClauseError, fn ->
+        new(nil)
+      end
+    end
+
+    test "raises when category contains invalid characters" do
+      assert_raise ArgumentError, fn ->
+        new("    asd:-sfd  ")
+      end
+    end
+
+    test "raises when identifier is not nil or string" do
+      assert_raise FunctionClauseError, fn ->
+        new("campaign", %{something: 123})
+      end
+    end
+
+    test "raises when types is not a list" do
+      assert_raise FunctionClauseError, fn ->
+        new("campaign", "asd-123", %{wrong: 123})
+      end
+    end
+  end
+
+  describe "StreamName.to_string" do
+    test "has types always in the same order" do
+      map = new("campaign", "123", ["position", "command"])
+      text = "campaign:command+position-123"
+
+      assert to_string(map) == text
+    end
+  end
 end

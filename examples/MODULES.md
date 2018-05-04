@@ -36,11 +36,12 @@
 - EspEx.Event.RawMetadata
   - defstruct [:stream_name, :position, :global_position, :metadata, :time]
 - EspEx.Event
-  - @callback caused_by(other_event)
   - caused_by(event) sets RawMetadata metadata field following
     [eventide specs](https://github.com/eventide-project/messaging/blob/6027504b4b505a233f74d055321c262a61003803/lib/messaging/message/metadata.rb)
   - use macro that provides macro `defevent`
     - defevent is just defstruct + [:id, :metadata]
+  - EspEx.Event.Causation (protocol)
+    - caused_by
 - EspEx.EventTransformer
   - @callback transform(string, raw event)
   - use macro (creates generic transform(string, event) and a transform
@@ -49,3 +50,14 @@
   - transform(Events module, raw event) returns
     - {:ok, event struct from `Events module`}
     - {:not_found, raw event}
+- EspEx.Store
+  - fetch(EventBus module (Postgres), Entity module, Projection module,
+    %StreamName) returns {:ok, entity, version}
+  - @callback fetch(id) returns {:ok, entity, version}
+  - use macro that adds @behavior and `fetch` function which accepts
+    identifier (used for StreamName)
+- EspEx.Handler
+  - @callback handle(event)
+  - use macro that provides automatically `handle` catch-all
+- EspEx.Consumer
+  - TODO: Add details

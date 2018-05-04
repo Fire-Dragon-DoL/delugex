@@ -43,17 +43,11 @@
   - caused_by(event) sets RawMetadata metadata field following
     [eventide specs](https://github.com/eventide-project/messaging/blob/6027504b4b505a233f74d055321c262a61003803/lib/messaging/message/metadata.rb)
   - use macro that provides macro `defevent`
-    - defevent is just defstruct + [:id, :metadata]
+    - defevent is just defstruct + [:id, :raw_metadata]
   - EspEx.Event.Causation (protocol)
     - caused_by
 - EspEx.EventTransformer
-  - @callback transform(string, raw event)
-  - use macro (creates generic transform(string, event) and a transform
-    catch-all which uses `ExpEx.EventTransformer.transform`,
-    @behavior EspEx.EventTransformer)
-  - transform(Events module, raw event) returns
-    - {:ok, event struct from `Events module`}
-    - {:error, raw event}
+  - Check docs in the EventTransformer.ex file
 - EspEx.Store
   - fetch(EventBus module (Postgres), Entity module, Projection module,
     %StreamName) returns {:ok, entity, version}

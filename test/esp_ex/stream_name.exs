@@ -252,4 +252,24 @@ defmodule EspEx.StreamNameTest do
       assert StreamName.has_all_types(map, ["command"]) == false
     end
   end
+
+  describe "StreamName.is_category" do
+    test "is true when StreamName has no identifier but has types" do
+      map = new("campaign", nil, ["position", "command", "snapshot"])
+
+      assert StreamName.is_category(map) == true
+    end
+
+    test "is true when StreamName has no identifier and no types" do
+      map = new("campaign", nil, [])
+
+      assert StreamName.is_category(map) == true
+    end
+
+    test "is false when StreamName has identifier" do
+      map = new("campaign", "123", ["command"])
+
+      assert StreamName.is_category(map) == false
+    end
+  end
 end

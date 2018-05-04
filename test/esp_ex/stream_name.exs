@@ -214,4 +214,42 @@ defmodule EspEx.StreamNameTest do
       assert to_string(map) == text
     end
   end
+
+  describe "StreamName.has_all_types" do
+    test "is true when types is a sublist of StreamName types" do
+      map = new("campaign", nil, ["position", "command", "snapshot"])
+
+      assert StreamName.has_all_types(map, ["position", "snapshot"]) == true
+    end
+
+    test "is true when types is empty" do
+      map = new("campaign", nil, ["position", "command", "snapshot"])
+
+      assert StreamName.has_all_types(map, []) == true
+    end
+
+    test "is true when types is empty and StreamName has no types" do
+      map = new("campaign", nil, [])
+
+      assert StreamName.has_all_types(map, []) == true
+    end
+
+    test "is true when types has one type and StreamName has no types" do
+      map = new("campaign", nil, ["command"])
+
+      assert StreamName.has_all_types(map, []) == true
+    end
+
+    test "is true when types matches StreamName types" do
+      map = new("campaign", nil, ["command", "position"])
+
+      assert StreamName.has_all_types(map, ["position", "command"]) == true
+    end
+
+    test "is false when types don't match StreamName types" do
+      map = new("campaign", nil, ["position"])
+
+      assert StreamName.has_all_types(map, ["command"]) == false
+    end
+  end
 end

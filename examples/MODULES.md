@@ -49,7 +49,7 @@
     @behavior EspEx.EventTransformer)
   - transform(Events module, raw event) returns
     - {:ok, event struct from `Events module`}
-    - {:not_found, raw event}
+    - {:error, raw event}
 - EspEx.Store
   - fetch(EventBus module (Postgres), Entity module, Projection module,
     %StreamName) returns {:ok, entity, version}
@@ -60,4 +60,24 @@
   - @callback handle(event)
   - use macro that provides automatically `handle` catch-all
 - EspEx.Consumer
-  - TODO: Add details
+  - start_link(module, options)
+    - start_polling
+    - repeatedly call handle_call({:consume_event}) as long as there is
+      something in buffer
+  - start_polling(module, interval)
+    - Start a timer, every X seconds fires :request_event and restart the timer
+  - use macro
+  - handle_call({:consume_event}) -> handler.handle, then
+    record current position (based on identifier), then
+    handle_call({:consume_event}) if there are still messages in the buffer
+  - handle_cast({:request_event}) -> get_batch or use events from the existing
+    buffer, fill in buffer. If there is anything in the buffer, run
+    handle_call({:consume_event})
+  - EspEx.Consumer.Postgres
+    - use macro which uses EspEx.Consumer
+    - listen
+      - run handle_cast({:request_event})
+    - unlisten
+      - Stops listen
+- EspEx.Logger
+  - Same functions as https://hexdocs.pm/logger/Logger.html , just wrapping it

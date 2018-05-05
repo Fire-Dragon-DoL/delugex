@@ -272,4 +272,36 @@ defmodule EspEx.StreamNameTest do
       assert StreamName.is_category(map) == false
     end
   end
+
+  describe "StreamName.position_identifier" do
+    test "raises when position is less than 0" do
+      map = new("campaign", "123", ["command"])
+
+      assert_raise ArgumentError, fn ->
+        StreamName.position_identifier(map, -1)
+      end
+    end
+
+    test "raises when position is not an integer or nil" do
+      map = new("campaign", "123", ["command"])
+
+      assert_raise ArgumentError, fn ->
+        StreamName.position_identifier(map, 2.3)
+      end
+    end
+
+    test "returns campaign:command-123/1 when position is 1" do
+      map = new("campaign", "123", ["command"])
+      text = "campaign:command-123/1"
+
+      assert StreamName.position_identifier(map, 1) == text
+    end
+
+    test "returns campaign:command-123 when position is nil" do
+      map = new("campaign", "123", ["command"])
+      text = "campaign:command-123"
+
+      assert StreamName.position_identifier(map, nil) == text
+    end
+  end
 end

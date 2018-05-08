@@ -1,3 +1,3 @@
 defmodule EspEx.Entity do
-  @type t :: any
+  @type t :: struct
 end

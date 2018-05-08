@@ -39,4 +39,16 @@ defmodule EspEx.ProjectionTest do
       assert entity == %Person{name: "jerry"}
     end
   end
+
+  describe "Projection.apply_all" do
+    test "applies list of events to entity using given projection" do
+      events = [%Nopped{}, %Renamed{name: "jerry"}, %Renamed{name: "tom"}]
+
+      entity =
+        %Person{name: "blah"}
+        |> Projection.apply_all(PersonProjection, events)
+
+      assert entity == %Person{name: "tom"}
+    end
+  end
 end

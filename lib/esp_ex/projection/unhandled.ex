@@ -1,4 +1,6 @@
 defmodule EspEx.Projection.Unhandled do
+  @moduledoc false
+
   defmacro __before_compile__(_env) do
     quote do
       @impl EspEx.Projection

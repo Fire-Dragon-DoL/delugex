@@ -12,10 +12,22 @@ defmodule EspEx.EventTransformer do
   - provide a default `to_raw_event`
   """
 
-  @callback to_event(raw_event)
-  @callback to_raw_event(event)
+  @callback to_event(String.t(), Struct.t()) :: any
+  @callback to_raw_event(Struct.t()) :: any
 
-  @doc """
+  # TODO do I really need this?
+  # needed in order to call -> use MyModule
+  # where does the implementation go?
+  # here or somewhere else?
+  defmacro __using__(_) do
+    # what goes inside here?
+    # the implementation?
+    # nothing?
+  end
+
+  def base_event_fields, do: [:id, :metadata, :raw_metadata]
+
+  @doc ~S"""
   Converts from a RawEvent to an Event, which is a struct defined
   by the user, in a module defined by the user, the only known things is that
   it has the `id` field and the `raw_metadata` field.
@@ -29,6 +41,13 @@ defmodule EspEx.EventTransformer do
   copied in the Event (which is a map)
   """
   def to_event(events_module, raw_event) do
+    IO.inspect(events_module)
+    IO.inspect(raw_event)
+
+    type = raw_event.type
+    struct = "#{events_module}.#{type}"
+
+    nil
   end
 
   @doc """
@@ -43,5 +62,6 @@ defmodule EspEx.EventTransformer do
   %RawEvent{id: "123", type: "Created"}
   """
   def to_raw_event(event) do
+    nil
   end
 end

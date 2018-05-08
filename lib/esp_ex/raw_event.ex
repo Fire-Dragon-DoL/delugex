@@ -1,4 +1,4 @@
 defmodule EspEx.RawEvent do
-  defstruct [:id, :stream_name, :type, :position, :global_position, :data,
-  :metadata, :time]
+  defstruct [:id, :metadata, :stream_name, :type, :position, :global_position,
+  :data, :time]
 end

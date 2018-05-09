@@ -2,10 +2,6 @@
 
 # TODO some example code (user creation) that uses the transformer
 # I'm gonna put it somewhere else later
-defmodule EspExTest.User do
-  defstruct [:id, :name]
-end
-
 defmodule EspExTest.User.Events do
   use EspEx.EventTransformer
 
@@ -28,20 +24,20 @@ defmodule EspExTest.EventTransformerTest do
   def raw_event do
     %EspEx.RawEvent{
       id: 123_456,
-      stream_name: 'user-created-123',
-      type: 'created',
-      position: 1,
-      global_position: 10,
+      stream_name: "user-created-999",
+      type: "created",
+      position: 100,
+      global_position: 150,
       data: %{
-        user_id: 123,
-        email: 'johndoe@mail.com'
+        user_id: 999,
+        email: "johndoe@mail.com"
       },
       metadata: %{some: :metadata},
-      time: DateTime.utc_now()
+      time: "2018-05-01T17:00:55.135053Z"
     }
   end
 
-  def expected_metadata do
+  def raw_metadata do
     raw_ev = raw_event()
 
     %EspEx.RawMetadata{
@@ -55,12 +51,11 @@ defmodule EspExTest.EventTransformerTest do
 
   def created_event do
     raw_ev = raw_event()
-    ex_metadata = expected_metadata()
+    raw_metadata = raw_metadata()
 
     %EspExTest.User.Events.Created{
       id: raw_ev.id,
-      raw_metadata: raw_ev,
-      metadata: ex_metadata,
+      raw_metadata: raw_metadata,
       user_id: raw_ev.data.email,
       email: raw_ev.data.email
     }
@@ -68,13 +63,18 @@ defmodule EspExTest.EventTransformerTest do
 
   # TODO reorganize
   test "to_event" do
-    events_module = EspExTest.User
-    assert Subject.to_event(events_module, raw_event()) == created_event()
+    event = raw_event()
+    expected_event = created_event()
+
+    events_module = EspExTest.User.Events
+    assert Subject.to_event(events_module, event) == expected_event
   end
 
   # TODO reorganize
   test "to_raw_event" do
-    events_module = EspExTest.User
-    assert Subject.to_raw_event(created_event()) == raw_event()
+    events_module = EspExTest.User.Events
+    expected_event = raw_event()
+    event = created_event()
+    assert Subject.to_raw_event(event) == expected_event
   end
 end

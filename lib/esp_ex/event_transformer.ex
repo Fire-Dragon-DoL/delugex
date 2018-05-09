@@ -25,7 +25,7 @@ defmodule EspEx.EventTransformer do
     # nothing?
   end
 
-  def base_event_fields, do: [:id, :metadata, :raw_metadata]
+  def base_event_fields, do: [:id, :raw_metadata]
 
   @doc ~S"""
   Converts from a RawEvent to an Event, which is a struct defined
@@ -41,13 +41,17 @@ defmodule EspEx.EventTransformer do
   copied in the Event (which is a map)
   """
   def to_event(events_module, raw_event) do
-    IO.inspect(events_module)
-    IO.inspect(raw_event)
+    type = String.capitalize(raw_event.type)
+    string_module = to_string(events_module)
+    modules = [string_module, type]
+    event_module = safe_concat(modules)
+    data = raw_event.data
 
-    type = raw_event.type
-    struct = "#{events_module}.#{type}"
+    event = struct(event_module, data) # TODO looks cool, but might cause trouble.
+    event = Map.put(event, :id, raw_event.id)
+    event = Map.put(event, :raw_metadata, raw_metadata(raw_event))
 
-    nil
+    event
   end
 
   @doc """
@@ -63,5 +67,20 @@ defmodule EspEx.EventTransformer do
   """
   def to_raw_event(event) do
     nil
+  end
+
+  defp safe_concat(modules) do
+    try do
+      # TODO add more safety
+      # Code.ensure_compiled?(event)
+      # function_exported?(event, :__struct__, 0)
+      Module.safe_concat(modules)
+    rescue
+      ArgumentError -> nil
+    end
+  end
+
+  defp raw_metadata(raw_event) do
+    struct(%EspEx.RawMetadata{}, Map.from_struct(raw_event))
   end
 end

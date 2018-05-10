@@ -1,15 +1,15 @@
 # Modules
 
 - EspEx.StreamName
-  - defstruct [:category, :identifier, :types]
+  - defstruct [:category (string), :identifier (string), :types (ordset)]
   - new (args):
     - category,
     - optional identifier (nil default),
-    - optional types (empty MapSet default)
+    - optional types (empty list, gets converted to ordset from a list)
   - from_string(string) returns %StreamName
   - to_string(%StreamName)
   - has_all_types checks if a list is a sublist of stuct types
-  - is_category
+  - category?
   - position_identifier(%StreamName, uint) returns string ("foo-123/1")
 - EspEx.EventBus
   - @callback write
@@ -79,3 +79,9 @@
       - Stops listen
 - EspEx.Logger
   - Same functions as https://hexdocs.pm/logger/Logger.html , just wrapping it
+
+## Optimizations
+
+- Event dispatcher
+- Position Store
+- Snapshotting

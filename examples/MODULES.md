@@ -79,3 +79,9 @@
       - Stops listen
 - EspEx.Logger
   - Same functions as https://hexdocs.pm/logger/Logger.html , just wrapping it
+
+## Optimizations
+
+- Event dispatcher
+- Position Store
+- Snapshotting

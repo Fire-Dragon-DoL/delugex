@@ -23,7 +23,7 @@ defmodule EspExTest.EventTransformerTest do
 
   def raw_event do
     %EspEx.RawEvent{
-      id: 123_456,
+      event_id: 123_456,
       stream_name: "user-created-999",
       type: "created",
       position: 100,
@@ -54,7 +54,7 @@ defmodule EspExTest.EventTransformerTest do
     raw_metadata = raw_metadata()
 
     %EspExTest.User.Events.Created{
-      id: raw_ev.id,
+      event_id: raw_ev.event_id,
       raw_metadata: raw_metadata,
       user_id: raw_ev.data.email,
       email: raw_ev.data.email

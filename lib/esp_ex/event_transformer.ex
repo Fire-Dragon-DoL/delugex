@@ -12,8 +12,8 @@ defmodule EspEx.EventTransformer do
   - provide a default `to_raw_event`
   """
 
-  @callback to_event(String.t(), Struct.t()) :: any
-  @callback to_raw_event(Struct.t()) :: any
+  @callback to_event(Module, RawEvent.t()) :: Struct.t
+  @callback to_raw_event(Struct.t()) :: RawEvent.t
 
   # TODO do I really need this?
   # needed in order to call -> use MyModule
@@ -25,45 +25,45 @@ defmodule EspEx.EventTransformer do
     # nothing?
   end
 
-  def base_event_fields, do: [:id, :raw_metadata]
+  def base_event_fields, do: [:event_id, :raw_metadata]
 
   @doc ~S"""
   Converts from a RawEvent to an Event, which is a struct defined
   by the user, in a module defined by the user, the only known things is that
-  it has the `id` field and the `raw_metadata` field.
+  it has the `event_id` field and the `raw_metadata` field.
 
   Takes a %RawEvent and it creates a new Event, based on events_module plus the
   `:type` field in RawEvent. So it becomes `#{events_module}.#{type}` (check
   for errors, create a custom struct %EspEx.Events.Unknown if it's missing).
-  Then copy `id` to `id`. Then, it grabs all the remaining
+  Then copy `event_id` to `event_id`. Then, it grabs all the remaining
   fields in RawEvent excluding `data` and it creates a `RawMetadata` out of it,
   which is stored in `:raw_metadata` field. Finally all fields in `data` are
   copied in the Event (which is a map)
   """
   def to_event(events_module, raw_event) do
-    type = String.capitalize(raw_event.type)
+    type          = String.capitalize(raw_event.type)
     string_module = to_string(events_module)
-    modules = [string_module, type]
-    event_module = safe_concat(modules)
-    data = raw_event.data
+    modules       = [string_module, type]
+    event_module  = safe_concat(modules)
+    data          = raw_event.data
 
-    event = struct(event_module, data) # TODO looks cool, but might cause trouble.
-    event = Map.put(event, :id, raw_event.id)
+    event = struct(event_module, data) # TODO might cause key collision
+    event = Map.put(event, :event_id, raw_event.event_id)
     event = Map.put(event, :raw_metadata, raw_metadata(raw_event))
 
     event
   end
 
   @doc """
-  Converts from a user defined Event to a RawEvent. It copies `id` to `id`,
-  then everything in `raw_metadata` becomes normal fields in RawEvent. Finally,
-  any field remaining in `Event` (after removing :id and :raw_metadata) goes
-  into Event `data` field
+  Converts from a user defined Event to a RawEvent. It copies `event_id` to
+  `event_id`, then everything in `raw_metadata` becomes normal fields in
+  RawEvent. Finally, any field remaining in `Event` (after removing :id and
+  :raw_metadata) goes into Event `data` field
 
   Takes a raw event (basically a map of the row coming from the database) and
   converts it to a user-defined struct (so that the user can pattern-match).
   For example:
-  %RawEvent{id: "123", type: "Created"}
+  %RawEvent{event_id: "123", type: "Created"}
   """
   def to_raw_event(event) do
     nil

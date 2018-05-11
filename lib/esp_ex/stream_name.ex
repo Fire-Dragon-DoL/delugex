@@ -34,6 +34,8 @@ defmodule EspEx.StreamName do
           types: list(String.t())
         }
 
+  @type t :: struct
+
   @enforce_keys [:category]
   defstruct(category: "", identifier: nil, types: [])
 

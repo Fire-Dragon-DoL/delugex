@@ -1,7 +1,7 @@
 defmodule EspEx.RawEvent do
   alias EspEx.RawEvent.Metadata
 
-  @type t :: %RawEvent{
+  @type t :: %EspEx.RawEvent{
           id: String.t(),
           stream_name: EspEx.StreamName.t(),
           type: String.t(),

@@ -23,21 +23,19 @@ defmodule EspEx.StreamName do
   - types are optional
 
   The struct coming out of `from_string` should look like:
-  %StreamName{category: "campaign", identifier: "123", types: MapSet<"command",
+  %StreamName{category: "campaign", identifier: "123", types: stream_nameSet<"command",
   "position">}
   The function `to_string` should convert it back to
   `campaign:command+position-123`
   """
   @type t :: %EspEx.StreamName{
           category: String.t(),
-          identifier: String.t(),
+          identifier: String.t() | nil,
           types: list(String.t())
         }
 
-  @type t :: struct
-
   @enforce_keys [:category]
-  defstruct(category: "", identifier: nil, types: [])
+  defstruct(category: "", identifier: nil, types: :ordsets.new())
 
   @doc """
   Creates a new StreamName struct.
@@ -49,23 +47,36 @@ defmodule EspEx.StreamName do
                         identifier: "123",
                         types: :ordsets.from_list(["command", "position"])}
   """
-  @spec new(category: String.t(), identifier: String.t(), types: list(String.t())) ::
-          %EspEx.StreamName{
-            category: String.t(),
-            identifier: String.t(),
-            types: list(String.t())
-          }
-  def new(category, identifier \\ nil, types \\ [])
-      when (is_bitstring(category) and is_nil(identifier)) or is_bitstring(identifier) do
-    category = String.trim(category)
-    types = Enum.map(types, fn x -> String.trim(x) end)
 
-    if category == "" do
-      raise ArgumentError, message: "category must not be blank"
-    else
-      %__MODULE__{category: category, identifier: identifier, types: :ordsets.from_list(types)}
-    end
+  def new("", _, _) do
+    raise ArgumentError, message: "category must not be blank"
   end
+
+  def new(category), do: new(category, nil, [])
+  def new(category, identifier), do: new(category, identifier, [])
+
+  @spec new(
+          category :: String.t(),
+          identifier :: String.t() | nil,
+          types :: list(String.t())
+        ) :: EspEx.StreamName.t()
+  def new(category, identifier, types)
+      when is_bitstring(category) and (is_nil(identifier) or is_bitstring(identifier)) and
+             is_list(types) do
+    category = String.trim(category)
+    category_empty!(category)
+    identifier = trim_or_nil(identifier)
+    types = Enum.map(types, &String.trim/1)
+
+    %__MODULE__{
+      category: category,
+      identifier: identifier,
+      types: :ordsets.from_list(types)
+    }
+  end
+
+  defp trim_or_nil(nil), do: nil
+  defp trim_or_nil(identifier), do: String.trim(identifier)
 
   @doc """
   Creates a StreamName struct with a provided string as an arguement.
@@ -76,24 +87,25 @@ defmodule EspEx.StreamName do
                         identifier: "123",
                         types: :ordsets.from_list(["command", "position"])}
   """
-  @spec from_string(String) :: %EspEx.StreamName{
-          category: String.t(),
-          identifier: String.t(),
-          types: list(String.t())
-        }
-  def from_string(string) do
-    category = extract_category(string)
-    identifier = extract_identifier(string)
-    types = extract_types(string, category, identifier)
+  @spec from_string(text :: String.t()) :: EspEx.StreamName.t()
+  def from_string(text) when is_bitstring(text) do
+    category = extract_category(text)
+    category_empty!(category)
+    identifier = extract_identifier(text)
+    types = extract_types(text, category, identifier)
 
     new(category, identifier, types)
   end
+
+  defp category_empty!(""), do: raise(ArgumentError, "Category is blank")
+  defp category_empty!(_), do: nil
 
   defp extract_category(string) do
     String.split(string, ":")
     |> List.first()
     |> String.split("-")
     |> List.first()
+    |> String.trim()
   end
 
   defp extract_identifier(string) do
@@ -108,7 +120,8 @@ defmodule EspEx.StreamName do
 
   defp extract_types(string, category, identifier) do
     types =
-      String.trim_leading(string, "#{category}")
+      string
+      |> String.trim_leading(category)
       |> String.trim_leading(":")
       |> String.trim_trailing("-#{identifier}")
       |> String.trim_trailing("+")
@@ -126,55 +139,49 @@ defmodule EspEx.StreamName do
 
   ## Examples
 
-      iex> map = %EspEx.StreamName{category: "campaign", identifier: "123", types: :ordsets.from_list(["command", "position"])}
-      iex> EspEx.StreamName.to_string(map)
+      iex> stream_name = %EspEx.StreamName{category: "campaign", identifier: "123", types: :ordsets.from_list(["command", "position"])}
+      iex> EspEx.StreamName.to_string(stream_name)
       "campaign:command+position-123"
   """
 
   defimpl String.Chars do
-    @spec to_string(map :: EspEx.StreamName.t) :: String.t()
-    def to_string(map) do
-      identifier = identifier_checker(map)
-      types = types_checker(map)
+    @spec to_string(stream_name :: EspEx.StreamName.t()) :: String.t()
+    def to_string(%EspEx.StreamName{
+          category: category,
+          identifier: identifier,
+          types: types
+        }) do
+      identifier = identifier_to_string(identifier)
+      types = types_to_string(types)
 
-      "#{map.category}#{types}#{identifier}"
+      "#{category}#{types}#{identifier}"
     end
 
-    defp identifier_checker(map) do
-      if map == [] do
-        ""
-      else
-        "-#{map.identifier}"
-      end
-    end
+    defp identifier_to_string(nil), do: ""
+    defp identifier_to_string(identifier), do: "-#{identifier}"
 
-    defp types_checker(map) do
-      if map.types == [] do
-        ""
-      else
-        ":#{Enum.join(map.types, "+")}"
-      end
-    end
+    defp types_to_string([]), do: ""
+    defp types_to_string(types), do: ":#{Enum.join(types, "+")}"
   end
 
   @doc """
-  Returns `true` if provided list is in provided map's types.
+  Returns `true` if provided list is in provided stream_name's types.
 
   ## Examples
 
-      iex> map = %EspEx.StreamName{category: "campaign", identifier: nil, types: :ordsets.from_list(["command", "position"])}
+      iex> stream_name = %EspEx.StreamName{category: "campaign", identifier: nil, types: :ordsets.from_list(["command", "position"])}
       iex> list = ["command", "position"]
-      iex> EspEx.StreamName.has_all_types(map, list)
+      iex> EspEx.StreamName.has_all_types(stream_name, list)
       true
   """
   @spec has_all_types(
-          %EspEx.StreamName{category: String.t(), identifier: String.t(), types: list(String.t())},
-          list(String.t())
+          stream_name :: EspEx.StreamName.t(),
+          list :: list(String.t())
         ) :: boolean()
-  def has_all_types(map, list) do
+  def has_all_types(%__MODULE__{types: types}, list) do
     list
     |> :ordsets.from_list()
-    |> :ordsets.is_subset(map.types)
+    |> :ordsets.is_subset(types)
   end
 
   @doc """
@@ -182,44 +189,33 @@ defmodule EspEx.StreamName do
   Returns `false` if StreamName struct has an identifier.
   ## Examples
 
-      iex> map = %EspEx.StreamName{category: "campaign", identifier: 123, types: :ordsets.from_list(["command", "position"])}
-      iex> EspEx.StreamName.is_category(map)
+      iex> stream_name = %EspEx.StreamName{category: "campaign", identifier: 123, types: :ordsets.from_list(["command", "position"])}
+      iex> EspEx.StreamName.category?(stream_name)
       false
   """
-  @spec is_category(%EspEx.StreamName{
-          category: String.t(),
-          identifier: String.t(),
-          types: list(String.t())
-        }) :: boolean()
-  def is_category(%__MODULE__{identifier: nil}), do: true
-  def is_category(%__MODULE__{}), do: false
+  @spec category?(stream_name :: EspEx.StreamName.t()) :: boolean()
+  def category?(%__MODULE__{identifier: nil}), do: true
+  def category?(%__MODULE__{}), do: false
 
   @doc """
   Returns a string of the StreamName with the position appended to the end.
 
   ## Examples
 
-      iex> map = %EspEx.StreamName{category: "campaign", identifier: 123, types: :ordsets.from_list(["command", "position"])}
-      iex> EspEx.StreamName.position_identifier(map, 1)
+      iex> stream_name = %EspEx.StreamName{category: "campaign", identifier: 123, types: :ordsets.from_list(["command", "position"])}
+      iex> EspEx.StreamName.position_identifier(stream_name, 1)
       "campaign:command+position-123/1"
   """
+  def position_identifier(%__MODULE__{} = stream_name, nil) do
+    to_string(stream_name)
+  end
+
   @spec position_identifier(
-          %EspEx.StreamName{category: String.t(), identifier: String.t(), types: list(String.t())},
-          integer()
-        ) :: boolean()
-  def position_identifier(map, position) do
-    cond do
-      position < 0 ->
-        raise ArgumentError, message: "position must not be less than 0"
-
-      is_float(position) ->
-        raise ArgumentError, message: "position must not be a float"
-
-      is_nil(position) ->
-        to_string(map)
-
-      true ->
-        to_string(map) <> "/#{position}"
-    end
+          stream_name :: EspEx.StreamName.t(),
+          position :: non_neg_integer() | nil
+        ) :: String.t()
+  def position_identifier(%__MODULE__{} = stream_name, position)
+      when is_integer(position) and position >= 0 do
+    to_string(stream_name) <> "/#{position}"
   end
 end

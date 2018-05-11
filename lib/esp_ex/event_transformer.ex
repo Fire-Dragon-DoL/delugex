@@ -40,6 +40,14 @@ defmodule EspEx.EventTransformer do
         modules       = [string_module, type]
         event_module  = safe_concat(modules)
 
+        build_event(event_module, raw_event)
+      end
+
+      defp build_event(event_module = EspEx.UnknownEvent, raw_event) do
+        struct(EspEx.UnknownEvent, Map.from_struct(raw_event))
+      end
+
+      defp build_event(event_module, raw_event) do
         event = struct(event_module, raw_event.data)
         raw_event = Map.put(raw_event, :data, nil)
 

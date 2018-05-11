@@ -1,6 +1,18 @@
 defmodule EspEx.HandlerTest do
   use ExUnit.Case, async: true
+
   alias EspEx.RawEvent
+  alias EspEx.RawEvent.Metadata
+  alias EspEx.StreamName
+
+  @stream_name %StreamName{category: "campaign", identifier: "123", types: []}
+  @raw_event %RawEvent{
+    id: "11111111",
+    stream_name: @stream_name,
+    type: "Updated",
+    data: %{name: "Unnamed"},
+    metadata: %Metadata{}
+  }
 
   defmodule Person do
     defstruct []
@@ -25,11 +37,11 @@ defmodule EspEx.HandlerTest do
 
   describe "Handler.handle" do
     test "defaults to doing nothing" do
-      PersonHandler.handle(%Person{}, %Nopped{}, %RawEvent{})
+      PersonHandler.handle(%Person{}, %Nopped{}, @raw_event)
     end
 
     test "calls specific handle when implemented" do
-      PersonHandler.handle(%Person{}, %Renamed{}, %RawEvent{})
+      PersonHandler.handle(%Person{}, %Renamed{}, @raw_event)
 
       assert_receive({:renamed})
     end

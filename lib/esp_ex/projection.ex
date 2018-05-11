@@ -36,8 +36,6 @@ defmodule EspEx.Projection do
   alias EspEx.Event
   alias EspEx.Logger
 
-  @opaque enumerable(t) :: Enum.t() | Enumerable.t() | list(t)
-
   @callback apply(entity :: Entity.t(), event :: Event.t()) :: Entity.t()
 
   defmacro __using__(_) do
@@ -56,7 +54,7 @@ defmodule EspEx.Projection do
   @spec apply_all(
           current_entity :: Entity.t(),
           projection :: module,
-          events :: enumerable(Event.t())
+          events :: Enumerable.t()
         ) :: Entity.t()
   def apply_all(current_entity, projection, events \\ []) do
     Enum.reduce(events, current_entity, fn event, entity ->

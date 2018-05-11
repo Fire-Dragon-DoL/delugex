@@ -43,8 +43,9 @@ defmodule EspEx.EventTransformer do
         event = struct(event_module, raw_event.data)
         raw_event = Map.put(raw_event, :data, nil)
 
-        event = Map.put(event, :event_id, raw_event.event_id)
-        event = Map.put(event, :raw_event, raw_event)
+        event
+        |> Map.put(:event_id, raw_event.event_id)
+        |> Map.put(:raw_event, raw_event)
       end
 
       @doc """
@@ -60,20 +61,12 @@ defmodule EspEx.EventTransformer do
       """
       def to_raw_event(event) do
         type = determine_type(event)
+
         raw_event = event.raw_event
-        raw_event = Map.put(raw_event, :event_id, event.event_id)
-        raw_event = Map.put(raw_event, :type, type)
+        |> Map.put(:event_id, event.event_id)
+        |> Map.put(:type, type)
 
-        # data == the rest of the key/vals (set difference)
-        event_keys = Map.keys(event)
-        raw_event_keys = Map.keys(raw_event) ++ [:raw_event]
-
-        sa = MapSet.new(event_keys)
-        sb = MapSet.new(raw_event_keys)
-        diff_keys = MapSet.difference(sa, sb)
-        raw_event = Map.put(raw_event, :data, Map.take(event, diff_keys))
-
-        raw_event
+        Map.put(raw_event, :data, extract_data(raw_event, event))
       end
 
       defp safe_concat(modules) do
@@ -86,12 +79,25 @@ defmodule EspEx.EventTransformer do
           ArgumentError -> EspEx.UnknownEvent # TODO log?
         end
       end
+
       defp determine_type(event) do
         event.__struct__
         |> to_string()
         |> String.split(".")
         |> List.last
         |> String.downcase
+      end
+
+      # TODO there's probably a more readable way to do this.
+      defp extract_data(raw_event, event) do
+        # data == the rest of the key/vals (set difference)
+        event_keys = Map.keys(event)
+        raw_event_keys = Map.keys(raw_event) ++ [:raw_event] # excluding raw_ev
+
+        event_keys_set     = MapSet.new(event_keys)
+        raw_event_keys_set = MapSet.new(raw_event_keys)
+        diff_keys = MapSet.difference(event_keys_set, raw_event_keys_set)
+        Map.take(event, diff_keys)
       end
     end
   end

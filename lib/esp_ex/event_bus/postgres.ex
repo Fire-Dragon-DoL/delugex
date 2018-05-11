@@ -8,8 +8,7 @@ defmodule EspEx.EventBus.Postgres do
   make sure to convert it to string.
   """
 
-  # TODO uncomment
-  # use EspEx.EventBus
+  use EspEx.EventBus
 
   @doc """
   Write has an expected_version argument. This argument could be one of:

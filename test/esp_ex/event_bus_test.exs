@@ -3,7 +3,6 @@ defmodule EspEx.EventBusTest do
 
   alias Support.EspEx.EventBus.Static, as: EventBus
   alias EspEx.RawEvent
-  alias EspEx.RawEvent.Metadata
   alias EspEx.StreamName
 
   @stream_name %StreamName{category: "campaign", identifier: "123", types: []}
@@ -35,7 +34,7 @@ defmodule EspEx.EventBusTest do
     test "returns %RawEvent when stream has events" do
       raw_event = EventBus.read_last(@stream_name)
 
-      assert raw_event.position == 2 && raw_event.id == "uuid"
+      assert raw_event.position == 2 && raw_event.event_id == "uuid"
     end
 
     test "returns nil when stream is empty" do

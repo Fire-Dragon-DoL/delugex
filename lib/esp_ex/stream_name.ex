@@ -129,12 +129,8 @@ defmodule EspEx.StreamName do
       "campaign:command+position-123"
   """
 
-  defimpl String.Chars, for: EspEx.StreamName do
-    # @spec to_string(%EspEx.StreamName{
-    #         category: String.t(),
-    #         identifier: String.t(),
-    #         types: list(String.t())
-    #       }) :: String.t()
+  defimpl String.Chars do
+    @spec to_string(map :: EspEx.StreamName.t) :: String.t()
     def to_string(map) do
       identifier = identifier_checker(map)
       types = types_checker(map)

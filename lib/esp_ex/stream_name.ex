@@ -26,4 +26,7 @@ defmodule EspEx.StreamName do
   The function `to_string` should convert it back to
   `campaign:command+position-123`
   """
+
+  @enforce_keys [:category]
+  defstruct category: "", identifier: nil, types: []
 end

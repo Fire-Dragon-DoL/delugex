@@ -21,6 +21,9 @@ defmodule EspEx.EventTransformer do
     quote do
       @behaviour unquote(__MODULE__)
 
+      @spec to_event(module, EspEx.RawEvent.t()) :: struct | EspEx.UnknownEvent.t()
+      @spec to_raw_event(struct) :: EspEx.RawEvent.t()
+
       @doc ~S"""
       Converts from a RawEvent to an Event, which is a struct defined
       by the user, in a module defined by the user, the only known things is that
@@ -34,6 +37,7 @@ defmodule EspEx.EventTransformer do
       in `:raw_event` field. Finally all fields in `data` are
       copied in the Event (which is a map)
       """
+      @impl EspEx.EventTransformer
       def to_event(events_module, raw_event) do
         type          = String.capitalize(raw_event.type)
         string_module = to_string(events_module)
@@ -67,6 +71,7 @@ defmodule EspEx.EventTransformer do
       For example:
       %RawEvent{event_id: "123", type: "Created"}
       """
+      @impl EspEx.EventTransformer
       def to_raw_event(event) do
         type = determine_type(event)
 

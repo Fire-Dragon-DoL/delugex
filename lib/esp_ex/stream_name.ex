@@ -27,6 +27,8 @@ defmodule EspEx.StreamName do
   `campaign:command+position-123`
   """
 
+  @type t :: struct
+
   @enforce_keys [:category]
   defstruct category: "", identifier: nil, types: []
 end

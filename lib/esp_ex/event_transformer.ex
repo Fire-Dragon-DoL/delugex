@@ -12,8 +12,8 @@ defmodule EspEx.EventTransformer do
   - provide a default `to_raw_event`
   """
 
-  @callback to_event(Module.t(), RawEvent.t()) :: Struct.t() | UnknownEvent.t()
-  @callback to_raw_event(Struct.t()) :: RawEvent.t()
+  @callback to_event(module, EspEx.RawEvent.t()) :: struct | EspEx.UnknownEvent.t()
+  @callback to_raw_event(struct) :: EspEx.RawEvent.t()
 
   def base_event_fields, do: [:event_id, :raw_event]
 

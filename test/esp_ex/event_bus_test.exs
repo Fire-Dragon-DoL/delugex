@@ -9,11 +9,10 @@ defmodule EspEx.EventBusTest do
   @stream_name %StreamName{category: "campaign", identifier: "123", types: []}
   @empty_stream %StreamName{category: "empty", identifier: nil, types: []}
   @raw_event %RawEvent{
-    id: "11111111",
+    event_id: "11111111",
     stream_name: @stream_name,
     type: "Updated",
-    data: %{name: "Unnamed"},
-    metadata: %Metadata{}
+    data: %{name: "Unnamed"}
   }
 
   describe "EventBus.write_initial" do

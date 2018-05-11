@@ -2,37 +2,33 @@ defmodule Support.EspEx.EventBus.Static do
   use EspEx.EventBus
 
   alias EspEx.RawEvent
-  alias EspEx.RawEvent.Metadata
   alias EspEx.StreamName
 
   @stream_name %StreamName{category: "campaign", identifier: "123", types: []}
   @messages [
     %RawEvent{
-      id: "123-456",
+      event_id: "123-456",
       stream_name: @stream_name,
       type: "Updated",
       position: 0,
       global_position: 0,
-      data: %{name: "Foo"},
-      metadata: %Metadata{}
+      data: %{name: "Foo"}
     },
     %RawEvent{
-      id: "678-91011",
+      event_id: "678-91011",
       stream_name: @stream_name,
       type: "Updated",
       position: 1,
       global_position: 1,
-      data: %{name: "Bar"},
-      metadata: %Metadata{}
+      data: %{name: "Bar"}
     },
     %RawEvent{
-      id: "uuid",
+      event_id: "uuid",
       stream_name: @stream_name,
       type: "Updated",
       position: 2,
       global_position: 2,
-      data: %{name: "Lol"},
-      metadata: %Metadata{}
+      data: %{name: "Lol"}
     }
   ]
 

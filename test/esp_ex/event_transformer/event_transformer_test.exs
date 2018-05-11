@@ -34,7 +34,6 @@ defmodule EspExTest.EventTransformerTest do
         name: "John Doe",
         birthdate: "1991-05-01"
       },
-      metadata: %{some: :metadata},
       time: "2018-05-01T17:00:55.135053Z"
     }
   end
@@ -54,8 +53,8 @@ defmodule EspExTest.EventTransformerTest do
         type: raw_ev.type,
         position: raw_ev.position,
         global_position: raw_ev.global_position,
-        metadata: raw_ev.metadata,
-        time: raw_ev.time
+        time: raw_ev.time,
+        data: nil
       }
     }
   end

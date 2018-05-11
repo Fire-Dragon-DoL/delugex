@@ -1,5 +1,6 @@
 defmodule EspEx.StreamName do
-  alias   StreamName
+  alias StreamName
+
   @moduledoc """
   A StreamName is a module to manage the location where events are written.
   Think of stream names as a URL for where your events are located.
@@ -27,6 +28,11 @@ defmodule EspEx.StreamName do
   The function `to_string` should convert it back to
   `campaign:command+position-123`
   """
+  @type t :: %EspEx.StreamName{
+          category: String.t(),
+          identifier: String.t(),
+          types: list(String.t())
+        }
 
   @enforce_keys [:category]
   defstruct(category: "", identifier: nil, types: [])
@@ -74,21 +80,21 @@ defmodule EspEx.StreamName do
           types: list(String.t())
         }
   def from_string(string) do
-    category = category_extractor(string)
-    identifier = identifier_extractor(string)
-    types = types_extractor(string, category, identifier)
+    category = extract_category(string)
+    identifier = extract_identifier(string)
+    types = extract_types(string, category, identifier)
 
     new(category, identifier, types)
   end
 
-  defp category_extractor(string) do
+  defp extract_category(string) do
     String.split(string, ":")
     |> List.first()
     |> String.split("-")
     |> List.first()
   end
 
-  defp identifier_extractor(string) do
+  defp extract_identifier(string) do
     identifier = Regex.run(~r/-(.+)/, string)
 
     if identifier == nil do
@@ -98,7 +104,7 @@ defmodule EspEx.StreamName do
     end
   end
 
-  defp types_extractor(string, category, identifier) do
+  defp extract_types(string, category, identifier) do
     types =
       String.trim_leading(string, "#{category}")
       |> String.trim_leading(":")
@@ -124,7 +130,6 @@ defmodule EspEx.StreamName do
   """
 
   defimpl String.Chars, for: EspEx.StreamName do
-
     # @spec to_string(%EspEx.StreamName{
     #         category: String.t(),
     #         identifier: String.t(),

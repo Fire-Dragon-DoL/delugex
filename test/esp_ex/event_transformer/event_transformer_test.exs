@@ -6,13 +6,11 @@ defmodule EspExTest.User.Events do
   use EspEx.EventTransformer
 
   defmodule Created do
-    defstruct EspEx.EventTransformer.base_event_fields ++ [:user_id, :email,
-    :name, :birthdate]
+    defstruct EspEx.EventTransformer.base_event_fields() ++ [:user_id, :email, :name, :birthdate]
   end
 
   defmodule Updated do
-    defstruct EspEx.EventTransformer.base_event_fields ++ [:user_id, :email,
-    :name, :birthdate]
+    defstruct EspEx.EventTransformer.base_event_fields() ++ [:user_id, :email, :name, :birthdate]
   end
 end
 

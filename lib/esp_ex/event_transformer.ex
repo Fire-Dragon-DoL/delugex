@@ -39,10 +39,10 @@ defmodule EspEx.EventTransformer do
       """
       @impl EspEx.EventTransformer
       def to_event(events_module, raw_event) do
-        type          = String.capitalize(raw_event.type)
+        type = String.capitalize(raw_event.type)
         string_module = to_string(events_module)
-        modules       = [string_module, type]
-        event_module  = safe_concat(modules)
+        modules = [string_module, type]
+        event_module = safe_concat(modules)
 
         build_event(event_module, raw_event)
       end
@@ -75,9 +75,10 @@ defmodule EspEx.EventTransformer do
       def to_raw_event(event) do
         type = determine_type(event)
 
-        raw_event = event.raw_event
-        |> Map.put(:event_id, event.event_id)
-        |> Map.put(:type, type)
+        raw_event =
+          event.raw_event
+          |> Map.put(:event_id, event.event_id)
+          |> Map.put(:type, type)
 
         Map.put(raw_event, :data, extract_data(raw_event, event))
       end
@@ -89,7 +90,9 @@ defmodule EspEx.EventTransformer do
           # function_exported?(event, :__struct__, 0)
           Module.safe_concat(modules)
         rescue
-          ArgumentError -> EspEx.UnknownEvent # TODO log?
+          # TODO log?
+          ArgumentError ->
+            EspEx.UnknownEvent
         end
       end
 
@@ -97,17 +100,18 @@ defmodule EspEx.EventTransformer do
         event.__struct__
         |> to_string()
         |> String.split(".")
-        |> List.last
-        |> String.downcase
+        |> List.last()
+        |> String.downcase()
       end
 
       # TODO there's probably a more readable way to do this.
       defp extract_data(raw_event, event) do
         # data == the rest of the key/vals (set difference)
         event_keys = Map.keys(event)
-        raw_event_keys = Map.keys(raw_event) ++ [:raw_event] # excluding raw_ev
+        # excluding raw_ev
+        raw_event_keys = Map.keys(raw_event) ++ [:raw_event]
 
-        event_keys_set     = MapSet.new(event_keys)
+        event_keys_set = MapSet.new(event_keys)
         raw_event_keys_set = MapSet.new(raw_event_keys)
         diff_keys = MapSet.difference(event_keys_set, raw_event_keys_set)
         Map.take(event, diff_keys)

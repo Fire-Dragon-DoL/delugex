@@ -1,6 +1,4 @@
 defmodule EspEx.RawEvent do
-  # require EspEx.StreamName
-
   @type t :: %EspEx.RawEvent{
           id: String.t(),
           stream_name: EspEx.StreamName.t(),

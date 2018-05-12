@@ -1,25 +1,29 @@
 defmodule EspEx.RawEvent do
+  # require EspEx.StreamName
+
   @type t :: %EspEx.RawEvent{
-          event_id: String.t(),
+          id: String.t(),
           stream_name: EspEx.StreamName.t(),
           type: String.t(),
           position: non_neg_integer | nil,
           global_position: non_neg_integer | nil,
           data: map(),
+          metadata: EspEx.RawEvent.Metadata.t(),
           time: NaiveDateTime.t() | nil
         }
 
   @enforce_keys [
-    :event_id,
+    :id,
     :stream_name,
     :type,
     :data
   ]
-  defstruct event_id: "",
-            stream_name: "",
+  defstruct id: "",
+            stream_name: EspEx.StreamName.empty(),
             type: "",
             position: nil,
             global_position: nil,
             data: %{},
+            metadata: %EspEx.RawEvent.Metadata{},
             time: nil
 end

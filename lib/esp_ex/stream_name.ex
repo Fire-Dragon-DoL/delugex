@@ -37,6 +37,8 @@ defmodule EspEx.StreamName do
   @enforce_keys [:category]
   defstruct(category: "", identifier: nil, types: :ordsets.new())
 
+  def empty, do: %__MODULE__{category: ""}
+
   @doc """
   Creates a new StreamName struct.
 
@@ -48,12 +50,9 @@ defmodule EspEx.StreamName do
                         types: :ordsets.from_list(["command", "position"])}
   """
 
-  def new("", _, _) do
-    raise ArgumentError, message: "category must not be blank"
-  end
-
   def new(category), do: new(category, nil, [])
   def new(category, identifier), do: new(category, identifier, [])
+  def new("", _, _), do: raise(ArgumentError, message: "category is blank")
 
   @spec new(
           category :: String.t(),
@@ -134,17 +133,16 @@ defmodule EspEx.StreamName do
     end
   end
 
-  @doc """
-  Returns a string when provided with a StreamName struct.
-
-  ## Examples
-
-      iex> stream_name = %EspEx.StreamName{category: "campaign", identifier: "123", types: :ordsets.from_list(["command", "position"])}
-      iex> EspEx.StreamName.to_string(stream_name)
-      "campaign:command+position-123"
-  """
-
   defimpl String.Chars do
+    @doc """
+    Returns a string when provided with a StreamName struct.
+
+    ## Examples
+
+        iex> stream_name = %EspEx.StreamName{category: "campaign", identifier: "123", types: :ordsets.from_list(["command", "position"])}
+        iex> EspEx.StreamName.to_string(stream_name)
+        "campaign:command+position-123"
+    """
     @spec to_string(stream_name :: EspEx.StreamName.t()) :: String.t()
     def to_string(%EspEx.StreamName{
           category: category,

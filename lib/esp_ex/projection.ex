@@ -36,12 +36,21 @@ defmodule EspEx.Projection do
   alias EspEx.Event
   alias EspEx.Logger
 
-  @callback apply(entity :: Entity.t(), event :: Event.t()) :: Entity.t()
+  @callback apply(entity :: Entity.t(), event :: struct) :: Entity.t()
+  @callback apply_all(
+              entity :: Entity.t(),
+              events :: list(struct)
+            ) :: Entity.t()
 
   defmacro __using__(_) do
     quote do
       @behaviour unquote(__MODULE__)
       @before_compile EspEx.Projection.Unhandled
+
+      @impl unquote(__MODULE__)
+      def apply_all(entity, events) when is_list(events) do
+        unquote(__MODULE__).apply_all(entity, __MODULE__, events)
+      end
     end
   end
 

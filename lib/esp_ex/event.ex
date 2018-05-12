@@ -30,7 +30,7 @@ defmodule EspEx.Event do
   def type(%{__struct__: module}) do
     module
     |> to_string()
-    |> String.split(".")
+    |> Module.split()
     |> List.last()
   end
 

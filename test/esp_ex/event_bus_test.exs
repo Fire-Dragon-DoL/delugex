@@ -8,7 +8,7 @@ defmodule EspEx.EventBusTest do
   @stream_name %StreamName{category: "campaign", identifier: "123", types: []}
   @empty_stream %StreamName{category: "empty", identifier: nil, types: []}
   @raw_event %RawEvent{
-    event_id: "11111111",
+    id: "11111111",
     stream_name: @stream_name,
     type: "Updated",
     data: %{name: "Unnamed"}
@@ -34,7 +34,7 @@ defmodule EspEx.EventBusTest do
     test "returns %RawEvent when stream has events" do
       raw_event = EventBus.read_last(@stream_name)
 
-      assert raw_event.position == 2 && raw_event.event_id == "uuid"
+      assert raw_event.position == 2 && raw_event.id == "uuid"
     end
 
     test "returns nil when stream is empty" do

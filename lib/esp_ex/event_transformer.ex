@@ -9,27 +9,24 @@ defmodule EspEx.EventTransformer do
   - @behavior EspEx.EventTransformer
   - provide a default `to_event` which catches any event and convert them (use
   the created `EspEx.EventTransformer.to_event`)
-  - provide a default `to_raw_event`
   """
 
-  @callback to_event(module, EspEx.RawEvent.t()) :: struct | EspEx.UnknownEvent.t()
-  @callback to_raw_event(struct) :: EspEx.RawEvent.t()
+  alias EspEx.RawEvent
+  alias EspEx.Event.Unknown
 
-  @spec to_event(module, EspEx.RawEvent.t()) :: struct | EspEx.UnknownEvent.t()
-  @spec to_raw_event(struct) :: EspEx.RawEvent.t()
+  @callback to_event(raw_event :: EspEx.RawEvent.t()) :: struct | EspEx.Event.Unknown.t()
 
-  def base_event_fields, do: [:event_id, :raw_event]
+  defmacro __using__(opts \\ []) do
+    target_events_module = Keyword.get(opts, :events_module)
 
-  defmacro __using__(_opts) do
     quote do
       @behaviour unquote(__MODULE__)
 
-      @impl EspEx.EventTransformer
-      def to_event(events_module, raw_event),
-        do: EspEx.EventTransformer.to_event(events_module, raw_event)
-
-      @impl EspEx.EventTransformer
-      def to_raw_event(event), do: EspEx.EventTransformer.to_raw_event(event)
+      @impl unquote(__MODULE__)
+      def to_event(raw_event) do
+        events_module = unquote(target_events_module) || __MODULE__
+        EspEx.EventTransformer.to_event(events_module, raw_event)
+      end
     end
   end
 
@@ -46,80 +43,37 @@ defmodule EspEx.EventTransformer do
   in `:raw_event` field. Finally all fields in `data` are
   copied in the Event (which is a map)
   """
-  def to_event(events_module, raw_event) do
-    type = String.capitalize(raw_event.type)
-    string_module = to_string(events_module)
-    modules = [string_module, type]
-    event_module = safe_concat(modules)
-
-    build_event(event_module, raw_event)
-  end
-
-  @doc """
-  Converts from a user defined Event to a RawEvent. It copies `event_id` to
-  `event_id`, then everything in `raw_event` becomes normal fields in
-  RawEvent. Finally, any field remaining in `Event` (after removing :event_id and
-  :raw_event) goes into Event `data` field
-
-  Takes a raw event (basically a map of the row coming from the database) and
-  converts it to a user-defined struct (so that the user can pattern-match).
-  For example:
-  %RawEvent{event_id: "123", type: "Created"}
-  """
-  def to_raw_event(event) do
-    type = determine_type(event)
-
-    raw_event =
-      event.raw_event
-      |> Map.put(:event_id, event.event_id)
-      |> Map.put(:type, type)
-
-    Map.put(raw_event, :data, extract_data(raw_event, event))
-  end
-
-  defp safe_concat(modules) do
-    try do
-      # TODO add more safety
-      # Code.ensure_compiled?(event)
-      # function_exported?(event, :__struct__, 0)
-      Module.safe_concat(modules)
-    rescue
-      # TODO log?
-      ArgumentError ->
-        EspEx.UnknownEvent
+  def to_event(events_module, %RawEvent{type: type} = raw_event)
+      when is_atom(events_module) do
+    with {:ok, event_module} <- to_event_module(events_module, type) do
+      struct(event_module, raw_event.data)
+    else
+      {:unknown, _} -> %Unknown{raw_event: raw_event}
+      {:no_struct, _} -> %Unknown{raw_event: raw_event}
     end
   end
 
-  defp build_event(event_module = EspEx.UnknownEvent, raw_event) do
-    struct(EspEx.UnknownEvent, Map.from_struct(raw_event))
+  def to_event_module(events_module, type)
+      when is_atom(events_module) and is_bitstring(type) do
+    try do
+      event_module = Module.safe_concat([events_module, type])
+      event_module_result(event_module)
+    rescue
+      ArgumentError ->
+        EspEx.Logger.warn(fn ->
+          "Event #{events_module}.#{type} doesn't exist"
+        end)
+
+        {:unknown, {events_module, type}}
+    end
   end
 
-  defp build_event(event_module, raw_event) do
-    event = struct(event_module, raw_event.data)
-    raw_event = Map.put(raw_event, :data, nil)
-
-    event
-    |> Map.put(:event_id, raw_event.event_id)
-    |> Map.put(:raw_event, raw_event)
-  end
-
-  defp determine_type(event) do
-    event.__struct__
-    |> to_string()
-    |> String.split(".")
-    |> List.last()
-    |> String.downcase()
-  end
-
-  defp extract_data(raw_event, event) do
-    # data == the rest of the key/vals (set difference)
-    event_keys = Map.keys(event)
-    # excluding raw_ev
-    raw_event_keys = Map.keys(raw_event) ++ [:raw_event]
-
-    event_keys_set = MapSet.new(event_keys)
-    raw_event_keys_set = MapSet.new(raw_event_keys)
-    diff_keys = MapSet.difference(event_keys_set, raw_event_keys_set)
-    Map.take(event, diff_keys)
+  defp event_module_result(event_module) do
+    if function_exported?(event_module, :__struct__, 0) do
+      {:ok, event_module}
+    else
+      EspEx.Logger.warn(fn -> "Event #{event_module} has no struct" end)
+      {:no_struct, event_module}
+    end
   end
 end

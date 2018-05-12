@@ -6,7 +6,7 @@ defmodule EspEx.HandlerTest do
 
   @stream_name %StreamName{category: "campaign", identifier: "123", types: []}
   @raw_event %RawEvent{
-    event_id: "11111111",
+    id: "11111111",
     stream_name: @stream_name,
     type: "Updated",
     data: %{name: "Unnamed"}

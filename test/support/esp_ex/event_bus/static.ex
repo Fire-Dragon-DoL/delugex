@@ -7,7 +7,7 @@ defmodule Support.EspEx.EventBus.Static do
   @stream_name %StreamName{category: "campaign", identifier: "123", types: []}
   @messages [
     %RawEvent{
-      event_id: "123-456",
+      id: "123-456",
       stream_name: @stream_name,
       type: "Updated",
       position: 0,
@@ -15,7 +15,7 @@ defmodule Support.EspEx.EventBus.Static do
       data: %{name: "Foo"}
     },
     %RawEvent{
-      event_id: "678-91011",
+      id: "678-91011",
       stream_name: @stream_name,
       type: "Updated",
       position: 1,
@@ -23,7 +23,7 @@ defmodule Support.EspEx.EventBus.Static do
       data: %{name: "Bar"}
     },
     %RawEvent{
-      event_id: "uuid",
+      id: "uuid",
       stream_name: @stream_name,
       type: "Updated",
       position: 2,

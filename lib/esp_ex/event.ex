@@ -5,9 +5,15 @@ defmodule EspEx.Event do
 
   alias EspEx.RawEvent
 
+  @type raw_event_opts :: [
+          id: String.t(),
+          stream_name: EspEx.StreamName.t(),
+          time: NaiveDateTime.t()
+        ]
+
   @spec to_raw_event(
           event :: struct(),
-          opts :: EspEx.Event.Transformable.raw_event_opts()
+          opts :: raw_event_opts()
         ) :: EspEx.RawEvent.t()
   def to_raw_event(event, opts)
       when is_map(event) and is_list(opts) do

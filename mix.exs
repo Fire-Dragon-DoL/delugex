@@ -9,7 +9,16 @@ defmodule EspEx.MixProject do
       version: @version,
       elixir: "~> 1.6",
       elixirc_paths: elixirc_paths(Mix.env()),
-      deps: deps()
+      deps: deps(),
+      dialyzer: [
+        plt_add_apps: [:mnesia],
+        flags: [
+          :unmatched_returns,
+          :error_handling,
+          :race_conditions
+        ],
+        paths: ["_build/#{Mix.env()}/lib/esp_ex/consolidated"]
+      ]
     ]
   end
 

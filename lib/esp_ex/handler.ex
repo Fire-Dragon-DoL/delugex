@@ -7,13 +7,13 @@ defmodule EspEx.Handler do
 
   @callback handle(
               entity :: EspEx.Entity.t(),
-              event :: EspEx.Event.t(),
+              event :: struct,
               raw_event :: EspEx.RawEvent.t()
             ) :: no_return()
 
   defmacro __using__(_) do
     quote do
-      @behaviour EspEx.Handler
+      @behaviour unquote(__MODULE__)
       @before_compile EspEx.Handler.Unhandled
     end
   end

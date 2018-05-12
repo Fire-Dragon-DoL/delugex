@@ -40,7 +40,7 @@ defmodule EspEx.Projection do
 
   defmacro __using__(_) do
     quote do
-      @behaviour EspEx.Projection
+      @behaviour unquote(__MODULE__)
       @before_compile EspEx.Projection.Unhandled
     end
   end

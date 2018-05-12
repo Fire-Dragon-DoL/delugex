@@ -47,14 +47,14 @@ defmodule EspEx.EventBus do
 
   defmacro __using__(_) do
     quote do
-      @behaviour EspEx.EventBus
+      @behaviour unquote(__MODULE__)
 
-      @impl EspEx.EventBus
+      @impl unquote(__MODULE__)
       def write_initial(raw_event) do
         EspEx.EventBus.write_initial(__MODULE__, raw_event)
       end
 
-      @impl EspEx.EventBus
+      @impl unquote(__MODULE__)
       def stream(stream_name, position \\ 0, batch_size \\ 10) do
         EspEx.EventBus.stream(__MODULE__, stream_name, position, batch_size)
       end

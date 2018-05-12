@@ -23,9 +23,13 @@ defmodule EspEx.EventTransformer do
       @behaviour unquote(__MODULE__)
 
       @impl unquote(__MODULE__)
-      def to_event(raw_event) do
-        events_module = unquote(target_events_module) || __MODULE__
-        EspEx.EventTransformer.to_event(events_module, raw_event)
+      def to_event(%RawEvent{} = raw_event) do
+        events_module = unquote(target_events_module)
+
+        case events_module do
+          nil -> EspEx.EventTransformer.to_event(__MODULE__, raw_event)
+          _ -> EspEx.EventTransformer.to_event(events_module, raw_event)
+        end
       end
     end
   end

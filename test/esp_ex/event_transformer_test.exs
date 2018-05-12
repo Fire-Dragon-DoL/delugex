@@ -13,6 +13,10 @@ defmodule EspEx.EventTransformerTest do
     end
   end
 
+  defmodule Transformer do
+    use EspEx.EventTransformer, events_module: EspEx.EventTransformerTest.Events
+  end
+
   defp raw_event(type) do
     %EspEx.RawEvent{
       id: 123_456,
@@ -61,6 +65,14 @@ defmodule EspEx.EventTransformerTest do
       event = Events.to_event(raw_ev)
 
       assert event == unknown_ev
+    end
+
+    test "transforms RawEvent into a user event using external module" do
+      raw_ev = raw_event("Created")
+      created_ev = created_event()
+      event = Transformer.to_event(raw_ev)
+
+      assert event == created_ev
     end
   end
 end

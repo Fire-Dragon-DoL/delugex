@@ -19,13 +19,15 @@ defmodule EspEx.MixProject do
         ],
         paths: ["_build/#{Mix.env()}/lib/esp_ex/consolidated"]
       ]
+      # aliases: [test: "test --no-start"]
     ]
   end
 
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger]
+      extra_applications: [:logger],
+      mod: {EspEx.Application, []}
     ]
   end
 

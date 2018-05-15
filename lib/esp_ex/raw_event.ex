@@ -10,6 +10,9 @@ defmodule EspEx.RawEvent do
           time: NaiveDateTime.t() | nil
         }
 
+  @typedoc """
+  - `:data` must be a map, not a struct
+  """
   @enforce_keys [
     :id,
     :stream_name,

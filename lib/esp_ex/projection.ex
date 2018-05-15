@@ -33,7 +33,6 @@ defmodule EspEx.Projection do
   """
 
   alias EspEx.Entity
-  alias EspEx.Event
   alias EspEx.Logger
 
   @callback apply(entity :: Entity.t(), event :: struct) :: Entity.t()

@@ -53,4 +53,10 @@ defmodule Support.EspEx.EventBus.Static do
 
   @impl EspEx.EventBus
   def read_version(_), do: nil
+
+  @impl EspEx.EventBus
+  def listen(_, _, _ \\ []), do: {:ok, nil}
+
+  @impl EspEx.EventBus
+  def unlisten(_, _ \\ []), do: nil
 end

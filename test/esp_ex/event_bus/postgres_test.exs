@@ -1,87 +1,68 @@
 defmodule EspEx.EventBus.PostgresTest do
   use ExUnit.Case, async: true
   alias EspEx.EventBus.Postgres
+  alias EspEx.StreamName
+  alias EspEx.RawEvent
+
+  @stream_name %StreamName{category: "campaign", identifier: "123", types: []}
+  @raw_event %RawEvent{
+    id: Ecto.UUID.generate(),
+    stream_name: @stream_name,
+    type: "Updated",
+    data: %{name: "Unnamed"}
+  }
+  @raw_event2 %RawEvent{
+    id: Ecto.UUID.generate(),
+    stream_name: @stream_name,
+    type: "Updated",
+    data: %{name: "Jerry"}
+  }
 
   setup do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(EspEx.Repo)
-
-    %{
-      uuid: UUID.uuid4(),
-      stream_name: "my_stream",
-      type: "my_type",
-      data: %{"some" => "data"},
-      metadata: %{"and" => "metadata"}
-    }
+    :ok = Ecto.Adapters.SQL.Sandbox.checkout(EspEx.EventBus.Postgres.Repo)
   end
 
-  test ".write & .get_batch", state do
-    uuid = UUID.uuid4()
+  describe "Postgres.write" do
+    test "writes raw_event and returns version" do
+      version = Postgres.write(@raw_event)
 
-    Postgres.write(
-      state.uuid,
-      state.stream_name,
-      state.type,
-      state.data,
-      metadata: state.metadata
-    )
-
-    id = state.uuid
-    stream_name = state.stream_name
-    type = state.type
-    data = state.data
-    metadata = state.metadata
-
-    assert [
-             %{
-               id: id,
-               stream_name: ^stream_name,
-               type: ^type,
-               data: ^data,
-               time: time,
-               position: 0,
-               global_position: global_position,
-               metadata: ^metadata
-             }
-           ] = Postgres.get_batch(state.stream_name)
-
-    assert is_integer(global_position)
-    assert {{_, _, _}, {_, _, _, _}} = time
+      assert version == 0
+    end
   end
 
-  test ".get_last", state do
-    Postgres.write(
-      state.uuid,
-      state.stream_name,
-      state.type,
-      state.data,
-      metadata: state.metadata
-    )
+  describe "Postgres.read_last" do
+    test "reads last event" do
+      Postgres.write(@raw_event)
+      Postgres.write(@raw_event2)
+      event = Postgres.read_last(@stream_name)
+      data = event.data
 
-    Postgres.write(
-      state.uuid,
-      state.stream_name,
-      state.type,
-      state.data,
-      metadata: state.metadata
-    )
+      assert data.name == "Jerry"
+    end
 
-    id = state.uuid
-    stream_name = state.stream_name
-    type = state.type
-    data = state.data
-    metadata = state.metadata
+    test "returns nil when no event found" do
+      event = Postgres.read_last(@stream_name)
 
-    assert [
-             %{
-               id: id,
-               stream_name: ^stream_name,
-               type: ^type,
-               data: ^data,
-               time: time,
-               position: 1,
-               global_position: global_position,
-               metadata: ^metadata
-             }
-           ] = Postgres.get_last(state.stream_name)
+      assert event == nil
+    end
+  end
+
+  describe "Postgres.read_batch" do
+    test "reads events in order" do
+      Postgres.write(@raw_event)
+      Postgres.write(@raw_event2)
+      events = Postgres.read_batch(@stream_name)
+      data = List.last(events).data
+
+      assert data.name == "Jerry"
+    end
+
+    test "reads a list of events" do
+      Postgres.write(@raw_event)
+      Postgres.write(@raw_event2)
+      events = Postgres.read_batch(@stream_name)
+
+      assert length(events) == 2
+    end
   end
 end

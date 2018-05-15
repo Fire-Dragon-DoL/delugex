@@ -1,26 +1,61 @@
 defmodule EspEx.EventBus.Postgres.NotificationsTest do
-  use ExUnit.Case, async: true
-  alias EspEx.EventBus.Postgres.Notifications
+  use ExUnit.Case
 
-  setup_all do
-    %{channel: "test_channel", data: "some data"}
+  alias EspEx.StreamName
+  alias EspEx.EventBus.Postgres
+
+  @stream_name %StreamName{category: "campaign", identifier: "123", types: []}
+  @text_stream to_string(@stream_name)
+
+  # If you run theses tests very fast (`mix test` twice in a row), they might
+  # fail due to postgres.
+  # Please wait ~10 seconds and re-run `mix test`. Postgres can decide to
+  # ignore the exact same notification repeated twice in a short timespan
+
+  describe "Notifications.listen" do
+    test "starts receiving database notifications" do
+      {:ok, ref} = Postgres.listen(@stream_name)
+      Postgres.notify(@text_stream, "bar")
+
+      assert_receive {:notification, _, _, @text_stream, "bar"}
+
+      Postgres.unlisten(ref)
+    end
+
+    test "starts receiving timer notifications" do
+      {:ok, ref} = Postgres.listen(@stream_name, interval: 100)
+
+      assert_receive {:reminder}, 500
+
+      Postgres.unlisten(ref)
+    end
   end
 
-  test "#listen & #notify", state do
-    {:ok, ref} = Notifications.listen(state.channel)
-    Notifications.notify(state.channel, state.data)
-    channel = state.channel
-    data = state.data
-    assert_received {:notification, connection_pid, ^ref, ^channel, ^data}
-    assert connection_pid == Process.whereis(Postgrex.Notifications)
+  describe "Notifications.unlisten" do
+    test "cancels any listening process, stopping messages from postgres" do
+      {:ok, ref} = Postgres.listen(@stream_name)
+      Postgres.unlisten(ref)
+      Postgres.notify(@text_stream, "never_sent")
+
+      refute_receive {:notification, _, _, @text_stream, "never_sent"}
+    end
+
+    test "cancels any listening process, stopping messages from timer" do
+      {:ok, ref} = Postgres.listen(@stream_name, interval: 50)
+      Postgres.unlisten(ref)
+
+      refute_receive {:reminder}
+    end
   end
 
-  test "#unlisten", state do
-    {:ok, ref} = Notifications.listen(state.channel)
-    Notifications.unlisten(ref, state.channel)
-    Notifications.notify(state.channel, state.data)
-    channel = state.channel
-    data = state.data
-    refute_received {:notification, connection_pid, ^ref, ^channel, ^data}
+  describe "Notifications.notify" do
+    test "passes data with the specified notification" do
+      {:ok, ref} = Postgres.listen(@stream_name)
+      Postgres.notify(@text_stream, "foo")
+
+      assert_receive {:notification, _, _, @text_stream, "foo"}, 500
+
+      Postgres.unlisten(ref)
+    end
   end
 end

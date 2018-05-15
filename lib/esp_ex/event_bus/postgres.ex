@@ -91,7 +91,13 @@ defmodule EspEx.EventBus.Postgres do
 
   @impl EspEx.EventBus
   @doc """
-  Receives notifications
+  Receives notifications as GenServer casts. Two types of notifications are
+  received:
+
+  - `{:notification, connection_pid, ref, channel, payload}` with a notify
+    from Postgres (check
+    [Postgrex documentation](https://hexdocs.pm/postgrex/Postgrex.Notifications.html#listen/3))
+  - `{:reminder}` which is received every X seconds
   """
   def listen(%StreamName{} = stream_name, opts \\ []) do
     EspEx.EventBus.Postgres.Notifications.listen(stream_name, opts)

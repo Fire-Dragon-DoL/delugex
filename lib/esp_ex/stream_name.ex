@@ -224,7 +224,7 @@ defmodule EspEx.StreamName do
           other_stream :: EspEx.StreamName.t()
         ) :: boolean
   def subset?(%__MODULE__{} = stream_name, %__MODULE__{} = other_stream) do
-    case category?(stream_name) do
+    case category?(other_stream) do
       true ->
         stream_name.category == other_stream.category &&
           stream_name.types == other_stream.types

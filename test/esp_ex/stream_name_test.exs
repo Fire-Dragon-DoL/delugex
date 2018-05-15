@@ -291,4 +291,41 @@ defmodule EspEx.StreamNameTest do
       assert StreamName.position_identifier(map, nil) == text
     end
   end
+
+  describe "StreamName.subset?" do
+    test "is true with same stream name" do
+      subset = new("campaign", "123", ["command"])
+      stream = new("campaign", "123", ["command"])
+
+      assert StreamName.subset?(subset, stream) == true
+    end
+
+    test "is true if stream is a category matching subset category" do
+      subset = new("campaign", "123", ["command"])
+      stream = new("campaign", nil, ["command"])
+
+      assert StreamName.subset?(subset, stream) == true
+    end
+
+    test "is false if matching category but not commands" do
+      subset = new("campaign", "123", ["command"])
+      stream = new("campaign", nil, ["position"])
+
+      assert StreamName.subset?(subset, stream) == false
+    end
+
+    test "is false if matching category and identifier but not commands" do
+      subset = new("campaign", "123", ["command"])
+      stream = new("campaign", "123", ["position"])
+
+      assert StreamName.subset?(subset, stream) == false
+    end
+
+    test "is false if not matching category" do
+      subset = new("user", "123", ["command"])
+      stream = new("campaign", "123", ["command"])
+
+      assert StreamName.subset?(subset, stream) == false
+    end
+  end
 end

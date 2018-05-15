@@ -32,8 +32,6 @@ defmodule EspEx.StoreTest do
     end
   end
 
-  # @stream_name %StreamName{category: "campaign", identifier: "123", types: []}
-
   defmodule Store do
     use EspEx.Store,
       event_bus: EventBus,

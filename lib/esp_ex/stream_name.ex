@@ -62,8 +62,8 @@ defmodule EspEx.StreamName do
           types :: list(String.t())
         ) :: EspEx.StreamName.t()
   def new(category, identifier, types)
-      when is_bitstring(category) and (is_nil(identifier) or is_bitstring(identifier)) and
-             is_list(types) do
+      when is_bitstring(category) and
+             (is_nil(identifier) or is_bitstring(identifier)) and is_list(types) do
     category = String.trim(category)
     category_empty!(category)
     identifier = trim_or_nil(identifier)
@@ -217,5 +217,20 @@ defmodule EspEx.StreamName do
   def position_identifier(%__MODULE__{} = stream_name, position)
       when is_integer(position) and position >= 0 do
     to_string(stream_name) <> "/#{position}"
+  end
+
+  @spec subset?(
+          stream_name :: EspEx.StreamName.t(),
+          other_stream :: EspEx.StreamName.t()
+        ) :: boolean
+  def subset?(%__MODULE__{} = stream_name, %__MODULE__{} = other_stream) do
+    case category?(stream_name) do
+      true ->
+        stream_name.category == other_stream.category &&
+          stream_name.types == other_stream.types
+
+      false ->
+        stream_name == other_stream
+    end
   end
 end

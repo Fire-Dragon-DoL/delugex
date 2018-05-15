@@ -8,6 +8,8 @@ config :logger,
   compile_time_purge_level: :debug
 
 config :ecto, json_library: Jason
-config :esp_ex, EspEx.EventBus.Postgres.Repo, types: EspEx.EventBus.Postgres.Types
+
+config :esp_ex, EspEx.EventBus.Postgres.Repo,
+  types: EspEx.EventBus.Postgres.Types
 
 import_config "./environment/#{Mix.env()}.exs"

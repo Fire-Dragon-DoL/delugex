@@ -18,7 +18,8 @@ defmodule EspEx.EventBus do
               expected_version :: expected_version()
             ) :: version()
   @callback write_initial(raw_event :: EspEx.RawEvent.t()) :: version()
-  @callback read_last(stream_name :: EspEx.StreamName.t()) :: EspEx.RawEvent.t() | nil
+  @callback read_last(stream_name :: EspEx.StreamName.t()) ::
+              EspEx.RawEvent.t() | nil
   @callback read_batch(
               stream_name :: EspEx.StreamName.t(),
               position :: version(),

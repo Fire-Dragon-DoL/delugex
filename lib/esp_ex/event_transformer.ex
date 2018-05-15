@@ -14,7 +14,8 @@ defmodule EspEx.EventTransformer do
   alias EspEx.RawEvent
   alias EspEx.Event.Unknown
 
-  @callback to_event(raw_event :: EspEx.RawEvent.t()) :: struct | EspEx.Event.Unknown.t()
+  @callback to_event(raw_event :: EspEx.RawEvent.t()) ::
+              struct | EspEx.Event.Unknown.t()
 
   defmacro __using__(opts \\ []) do
     target_events_module = Keyword.get(opts, :events_module)

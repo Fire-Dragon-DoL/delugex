@@ -53,8 +53,8 @@ defmodule EspEx.Store do
         projection,
         %EspEx.StreamName{} = stream_name
       )
-      when is_atom(event_bus) and is_atom(entity_builder) and is_atom(event_transformer) and
-             is_atom(projection) do
+      when is_atom(event_bus) and is_atom(entity_builder) and
+             is_atom(event_transformer) and is_atom(projection) do
     new_ent = entity_builder.new()
 
     event_bus.stream(stream_name)

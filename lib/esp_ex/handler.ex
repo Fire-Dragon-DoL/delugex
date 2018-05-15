@@ -6,7 +6,6 @@ defmodule EspEx.Handler do
   """
 
   @callback handle(
-              entity :: EspEx.Entity.t(),
               event :: struct,
               raw_event :: EspEx.RawEvent.t()
             ) :: no_return()

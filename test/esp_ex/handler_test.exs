@@ -12,10 +12,6 @@ defmodule EspEx.HandlerTest do
     data: %{name: "Unnamed"}
   }
 
-  defmodule Person do
-    defstruct []
-  end
-
   defmodule Nopped do
     defstruct []
   end
@@ -28,18 +24,18 @@ defmodule EspEx.HandlerTest do
     use EspEx.Handler
 
     @impl EspEx.Handler
-    def handle(%Person{}, %Renamed{}, _) do
+    def handle(%Renamed{}, _) do
       send(self(), {:renamed})
     end
   end
 
   describe "Handler.handle" do
     test "defaults to doing nothing" do
-      PersonHandler.handle(%Person{}, %Nopped{}, @raw_event)
+      PersonHandler.handle(%Nopped{}, @raw_event)
     end
 
     test "calls specific handle when implemented" do
-      PersonHandler.handle(%Person{}, %Renamed{}, @raw_event)
+      PersonHandler.handle(%Renamed{}, @raw_event)
 
       assert_receive({:renamed})
     end

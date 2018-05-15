@@ -1,4 +1,11 @@
 defmodule EspEx.RawEvent do
+  @moduledoc """
+  Representation of an event in memory
+  """
+
+  @typedoc """
+  - `:data` must be a map, not a struct
+  """
   @type t :: %EspEx.RawEvent{
           id: String.t(),
           stream_name: EspEx.StreamName.t(),
@@ -10,9 +17,6 @@ defmodule EspEx.RawEvent do
           time: NaiveDateTime.t() | nil
         }
 
-  @typedoc """
-  - `:data` must be a map, not a struct
-  """
   @enforce_keys [
     :id,
     :stream_name,

@@ -42,11 +42,15 @@ defmodule Support.EspEx.EventBus.Static do
   def read_last(_), do: nil
 
   @impl EspEx.EventBus
-  def read_batch(@stream_name, position \\ 0, batch_size \\ 10) do
+  def read_batch(@stream_name, position, batch_size) do
     @messages
     |> Enum.drop(position)
     |> Enum.take(batch_size)
   end
+
+  def read_batch(_, _, _), do: []
+  def read_batch(stream_name), do: read_batch(stream_name, 0, 10)
+  def read_batch(stream_name, pos), do: read_batch(stream_name, pos, 10)
 
   @impl EspEx.EventBus
   def read_version(@stream_name), do: List.last(@messages).position

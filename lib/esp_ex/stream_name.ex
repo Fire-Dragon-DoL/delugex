@@ -28,9 +28,11 @@ defmodule EspEx.StreamName do
   The function `to_string` should convert it back to
   `campaign:command+position-123`
   """
+
+  @type id :: String.t() | nil
   @type t :: %EspEx.StreamName{
           category: String.t(),
-          identifier: String.t() | nil,
+          identifier: id(),
           types: list(String.t())
         }
 

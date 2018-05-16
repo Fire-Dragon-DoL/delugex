@@ -12,12 +12,14 @@ defmodule EspEx.Consumer do
     module
     |> GenServer.start(meta, opts)
     |> listen()
+    |> request_events()
   end
 
   def start_link(module, meta \\ nil, opts \\ []) do
     module
     |> GenServer.start_link(meta, opts)
     |> listen()
+    |> request_events()
   end
 
   def stop(server, reason \\ :normal, timeout \\ :infinity) do

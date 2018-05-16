@@ -35,6 +35,13 @@ defmodule EspEx.Consumer do
 
   defp listen(result), do: result
 
+  defp request_events({:ok, pid} = result) do
+    GenServer.cast(pid, {:request_events})
+    result
+  end
+
+  defp request_events(result), do: result
+
   @doc """
   - `:event_bus` **required** an `EspEx.EventBus` implementation
   - `:event_transformer` **required** an `EspEx.EventTransformer`
@@ -175,6 +182,7 @@ defmodule EspEx.Consumer do
       end
 
       defp read_batch(%{position: position}) do
+        EspEx.Logger.debug(fn -> "Consuming from position #{position}" end)
         @event_bus.read_batch(@stream_name, position)
       end
 

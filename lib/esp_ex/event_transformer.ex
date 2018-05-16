@@ -13,6 +13,7 @@ defmodule EspEx.EventTransformer do
 
   alias EspEx.RawEvent
   alias EspEx.Event.Unknown
+  alias EspEx.Logger
 
   @callback to_event(raw_event :: EspEx.RawEvent.t()) ::
               struct | EspEx.Event.Unknown.t()
@@ -62,10 +63,10 @@ defmodule EspEx.EventTransformer do
       when is_atom(events_module) and is_bitstring(type) do
     try do
       event_module = Module.safe_concat([events_module, type])
-      event_module_result(event_module)
+      load_and_to_result(event_module)
     rescue
       ArgumentError ->
-        EspEx.Logger.warn(fn ->
+        Logger.warn(fn ->
           "Event #{events_module}.#{type} doesn't exist"
         end)
 
@@ -73,12 +74,25 @@ defmodule EspEx.EventTransformer do
     end
   end
 
-  defp event_module_result(event_module) do
+  defp load_and_to_result(event_module) do
+    loaded = Code.ensure_loaded(event_module)
+    event_module_result(event_module, loaded)
+  end
+
+  defp event_module_result(event_module, {:module, _}) do
     if function_exported?(event_module, :__struct__, 0) do
       {:ok, event_module}
     else
-      EspEx.Logger.warn(fn -> "Event #{event_module} has no struct" end)
+      Logger.warn(fn -> "Event #{event_module} has no struct" end)
       {:no_struct, event_module}
     end
+  end
+
+  defp event_module_result(event_module, error) do
+    Logger.error(fn ->
+      "Event #{event_module} is a not a valid module: #{inspect(error)}"
+    end)
+
+    {:invalid_module, event_module}
   end
 end

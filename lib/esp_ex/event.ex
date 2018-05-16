@@ -17,13 +17,21 @@ defmodule EspEx.Event do
         ) :: EspEx.RawEvent.t()
   def to_raw_event(event, opts)
       when is_map(event) and is_list(opts) do
-    %RawEvent{
+    opts = raw_event_opts(opts)
+
+    raw_event = %RawEvent{
       id: Keyword.get(opts, :id),
       stream_name: Keyword.get(opts, :stream_name),
       type: type(event),
       data: Map.from_struct(event),
       time: Keyword.get(opts, :time)
     }
+
+    EspEx.Logger.debug(fn ->
+      "Event #{inspect(event)} converted to #{inspect(raw_event)}"
+    end)
+
+    raw_event
   end
 
   def to_raw_event(event)

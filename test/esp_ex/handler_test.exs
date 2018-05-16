@@ -24,18 +24,18 @@ defmodule EspEx.HandlerTest do
     use EspEx.Handler
 
     @impl EspEx.Handler
-    def handle(%Renamed{}, _) do
+    def handle(%Renamed{}, _, _) do
       send(self(), {:renamed})
     end
   end
 
   describe "Handler.handle" do
     test "defaults to doing nothing" do
-      PersonHandler.handle(%Nopped{}, @raw_event)
+      PersonHandler.handle(%Nopped{}, @raw_event, nil)
     end
 
     test "calls specific handle when implemented" do
-      PersonHandler.handle(%Renamed{}, @raw_event)
+      PersonHandler.handle(%Renamed{}, @raw_event, nil)
 
       assert_receive({:renamed})
     end

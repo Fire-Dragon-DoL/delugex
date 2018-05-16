@@ -4,7 +4,7 @@ defmodule EspEx.Handler.Unhandled do
   defmacro __before_compile__(_env) do
     quote do
       @impl EspEx.Handler
-      def handle(event, _) do
+      def handle(event, _, _) do
         EspEx.Logger.info(fn -> "Event #{inspect(event)} unhandled" end)
       end
     end

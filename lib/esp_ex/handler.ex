@@ -7,7 +7,8 @@ defmodule EspEx.Handler do
 
   @callback handle(
               event :: struct,
-              raw_event :: EspEx.RawEvent.t()
+              raw_event :: EspEx.RawEvent.t(),
+              meta :: any
             ) :: no_return()
 
   defmacro __using__(_) do

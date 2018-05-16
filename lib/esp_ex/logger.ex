@@ -1,6 +1,8 @@
 defmodule EspEx.Logger do
-  @tags ["esp_ex"]
+  @moduledoc false
+
   require Logger
+  @tags ["esp_ex"]
 
   def log(level, chardata_or_fun, metadata \\ []) do
     Logger.log(level, chardata_or_fun, tag(metadata))

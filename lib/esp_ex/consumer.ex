@@ -1,4 +1,8 @@
 defmodule EspEx.Consumer do
+  @moduledoc """
+  Listen to a stream allowing to handle any incoming events
+  """
+
   defstruct listener: nil,
             position: 0,
             events: [],
@@ -31,6 +35,18 @@ defmodule EspEx.Consumer do
 
   defp listen(result), do: result
 
+  @doc """
+  - `:event_bus` **required** an `EspEx.EventBus` implementation
+  - `:event_transformer` **required** an `EspEx.EventTransformer`
+    implementation
+  - `:stream_name` **required** a `EspEx.StreamName`
+  - `:identifier` (optional) a `String` identifying uniquely this consumer.
+    Defaults to the current module name
+  - `:handler` (optional) a `EspEx.Handler` implementation. Defaults to using
+    the current module
+  - `:listen_opts` (optional) options that will be provided to to the
+    `event_bus` that listen call as last argument
+  """
   defmacro __using__(opts \\ []) do
     event_bus = Keyword.get(opts, :event_bus)
     event_transformer = Keyword.get(opts, :event_transformer)

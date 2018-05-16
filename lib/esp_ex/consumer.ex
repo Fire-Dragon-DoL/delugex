@@ -2,7 +2,6 @@ defmodule EspEx.Consumer do
   defstruct listener: nil,
             position: 0,
             events: [],
-            read_more: true,
             meta: nil
 
   def start(module, meta \\ nil, opts \\ []) do
@@ -82,7 +81,7 @@ defmodule EspEx.Consumer do
           "[##{@identifier}] Notification for stream: #{channel}"
         end)
 
-        start_read_events()
+        request_events()
 
         {:noreply, consumer}
       end
@@ -91,19 +90,19 @@ defmodule EspEx.Consumer do
       def handle_info({:reminder}, %@consumer{} = consumer) do
         EspEx.Logger.debug(fn -> "[##{@identifier}] Reminder" end)
 
-        start_read_events()
+        request_events()
 
         {:noreply, consumer}
       end
 
       @impl GenServer
-      def handle_cast({:read_events}, %@consumer{} = consumer) do
-        read_events(consumer)
+      def handle_cast({:request_events}, %@consumer{} = consumer) do
+        fetch_events(consumer)
       end
 
       @impl GenServer
-      def handle_cast({:next_event}, %@consumer{} = consumer) do
-        next_event(consumer)
+      def handle_cast({:process_event}, %@consumer{} = consumer) do
+        consume_event(consumer)
       end
 
       @impl GenServer
@@ -112,37 +111,30 @@ defmodule EspEx.Consumer do
       def terminate({:shutdown, _}, consumer), do: unlisten(consumer)
       defoverridable terminate: 2
 
-      defp read_events(%{events: [], read_more: false} = consumer) do
-        {:noreply, consumer}
-      end
-
-      defp read_events(%{events: [], read_more: true} = consumer) do
+      defp fetch_events(%{events: []} = consumer) do
         events = read_batch(consumer)
 
         consumer =
           case events do
             [] ->
-              Map.put(consumer, :read_more, false)
+              consumer
 
             _ ->
               process_next_event()
-
-              consumer
-              |> Map.put(:events, events)
-              |> Map.put(:read_more, true)
+              Map.put(consumer, :events, events)
           end
 
         {:noreply, consumer}
       end
 
-      defp read_events(consumer), do: {:noreply, consumer}
+      defp fetch_events(consumer), do: {:noreply, consumer}
 
-      defp next_event(%{events: []} = consumer) do
-        start_read_events()
+      defp consume_event(%{events: []} = consumer) do
+        request_events()
         {:noreply, consumer}
       end
 
-      defp next_event(
+      defp consume_event(
              %{
                events: [raw_event | events],
                meta: meta
@@ -175,11 +167,11 @@ defmodule EspEx.Consumer do
       end
 
       defp process_next_event do
-        GenServer.cast(self(), {:next_event})
+        GenServer.cast(self(), {:process_event})
       end
 
-      defp start_read_events do
-        GenServer.cast(self(), {:read_events})
+      defp request_events do
+        GenServer.cast(self(), {:request_events})
       end
     end
   end

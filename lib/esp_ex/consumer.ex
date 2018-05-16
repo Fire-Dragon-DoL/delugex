@@ -5,6 +5,7 @@ defmodule EspEx.Consumer do
 
   defstruct listener: nil,
             position: 0,
+            global_position: 0,
             events: [],
             meta: nil
 
@@ -102,9 +103,7 @@ defmodule EspEx.Consumer do
             {:notification, _, _, channel, _payload},
             %@consumer{} = consumer
           ) do
-        EspEx.Logger.debug(fn ->
-          "[##{@identifier}] Notification for stream: #{channel}"
-        end)
+        debug(fn -> "Notification for stream: #{channel}" end)
 
         request_events()
 
@@ -113,7 +112,7 @@ defmodule EspEx.Consumer do
 
       @impl GenServer
       def handle_info({:reminder}, %@consumer{} = consumer) do
-        EspEx.Logger.debug(fn -> "[##{@identifier}] Reminder" end)
+        debug(fn -> "Reminder" end)
 
         request_events()
 
@@ -165,12 +164,17 @@ defmodule EspEx.Consumer do
                meta: meta
              } = consumer
            ) do
+        debug(fn ->
+          "Consuming event #{raw_event.type}/#{raw_event.position}"
+        end)
+
         handle_event(raw_event, meta)
 
         consumer =
           consumer
           |> Map.put(:events, events)
           |> Map.put(:position, raw_event.position + 1)
+          |> Map.put(:global_position, raw_event.global_position + 1)
 
         process_next_event()
 
@@ -183,8 +187,13 @@ defmodule EspEx.Consumer do
         handler().handle(event, raw_event, meta)
       end
 
-      defp read_batch(%{position: position}) do
-        EspEx.Logger.debug(fn -> "Consuming from position #{position}" end)
+      defp read_batch(%{position: pos, global_position: global_pos}) do
+        {pos_type, position} = local_or_global_position(pos, global_pos)
+
+        debug(fn ->
+          "Requesting events P#{pos} G#{global_pos}, used #{pos_type}"
+        end)
+
         @event_bus.read_batch(@stream_name, position)
       end
 
@@ -198,6 +207,21 @@ defmodule EspEx.Consumer do
 
       defp request_events do
         GenServer.cast(self(), {:request_events})
+      end
+
+      defp local_or_global_position(pos, global_pos) do
+        case EspEx.StreamName.category?(@stream_name) do
+          true -> {:global, global_pos}
+          _ -> {:local, pos}
+        end
+      end
+
+      defp debug(msg) when is_function(msg) do
+        EspEx.Logger.debug(fn -> "[##{@identifier}] " <> msg.() end)
+      end
+
+      defp debug(msg) do
+        EspEx.Logger.debug(fn -> "[##{@identifier}] " <> msg end)
       end
     end
   end

@@ -8,6 +8,16 @@ defmodule EspEx.Store do
   @callback fetch(identifier :: EspEx.StreamName.id()) ::
               {struct(), EspEx.EventBus.version() | nil}
 
+  @doc """
+  - `:event_bus` **required** `EspEx.EventBus` implementation, used to read
+    events
+  - `:entity_builder` **required** module implementing `EspEx.Entity` behaviour
+  - `:event_transformer` **required** implementation of
+    `EspEx.EventTransformer`
+  - `:projection` **required** implementation of `EspEx.Store`
+  - `:stream_name` **required** a category stream, struct from
+    `EspEx.StreamName`
+  """
   defmacro __using__(opts \\ []) do
     event_bus = Keyword.get(opts, :event_bus)
     entity_builder = Keyword.get(opts, :entity_builder)

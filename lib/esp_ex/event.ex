@@ -13,6 +13,37 @@ defmodule EspEx.Event do
 
   @spec to_raw_event(
           event :: struct(),
+          raw_event_base :: EspEx.RawEvent.t()
+        ) :: EspEx.RawEvent.t()
+  def to_raw_event(event, %RawEvent{} = raw_event_base)
+      when is_map(event) and is_map(raw_event_base) do
+    id = raw_event_base.id || random_uuid()
+    time = raw_event_base.time || naive_datetime_now()
+    stream_name = raw_event_base.stream_name || empty_stream_name()
+
+    type =
+      case raw_event_base.type do
+        "" -> type(event)
+        _ -> raw_event_base.type
+      end
+
+    raw_event =
+      raw_event_base
+      |> Map.put(:id, id)
+      |> Map.put(:stream_name, stream_name)
+      |> Map.put(:type, type)
+      |> Map.put(:data, Map.from_struct(event))
+      |> Map.put(:time, time)
+
+    EspEx.Logger.debug(fn ->
+      "Event #{inspect(event)} converted to #{inspect(raw_event)}"
+    end)
+
+    raw_event
+  end
+
+  @spec to_raw_event(
+          event :: struct(),
           opts :: raw_event_opts()
         ) :: EspEx.RawEvent.t()
   def to_raw_event(event, opts)
@@ -50,9 +81,17 @@ defmodule EspEx.Event do
 
   defp raw_event_opts(opts) do
     opts
-    |> Keyword.put_new(:id, Ecto.UUID.generate())
+    |> Keyword.put_new(:id, random_uuid())
     |> Keyword.put_new(:time, naive_datetime_now())
-    |> Keyword.put_new(:stream_name, EspEx.StreamName.empty())
+    |> Keyword.put_new(:stream_name, empty_stream_name())
+  end
+
+  defp empty_stream_name do
+    EspEx.StreamName.empty()
+  end
+
+  defp random_uuid do
+    Ecto.UUID.generate()
   end
 
   defp naive_datetime_now do

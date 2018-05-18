@@ -38,6 +38,7 @@ defmodule EspEx.RawEvent do
     other_meta =
       other_event.metadata
       |> Map.put(:correlation_stream_name, meta.correlation_stream_name)
+      |> Map.put(:reply_stream_name, meta.reply_stream_name)
       |> Map.put(:causation_message_stream_name, event.stream_name)
       |> Map.put(:causation_message_position, event.position)
       |> Map.put(:causation_message_global_position, event.global_position)

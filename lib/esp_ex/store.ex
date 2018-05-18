@@ -5,8 +5,11 @@ defmodule EspEx.Store do
 
   alias EspEx.Logger
 
-  @callback fetch(identifier :: EspEx.StreamName.id()) ::
-              {struct(), EspEx.EventBus.version() | nil}
+  @type fetch_opts :: [batch_size: pos_integer()]
+  @callback fetch(
+              identifier :: EspEx.StreamName.id(),
+              opts :: fetch_opts
+            ) :: {struct(), EspEx.EventBus.version() | nil}
 
   @doc """
   - `:event_bus` **required** `EspEx.EventBus` implementation, used to read
@@ -29,7 +32,7 @@ defmodule EspEx.Store do
       @behaviour unquote(__MODULE__)
 
       @impl unquote(__MODULE__)
-      def fetch(identifier \\ nil) do
+      def fetch(identifier \\ nil, opts \\ []) do
         stream = unquote(stream_name)
 
         stream =
@@ -43,7 +46,8 @@ defmodule EspEx.Store do
           unquote(entity_builder),
           unquote(event_transformer),
           unquote(projection),
-          stream
+          stream,
+          opts
         )
       end
     end
@@ -54,20 +58,23 @@ defmodule EspEx.Store do
           entity_builder :: module,
           event_transformer :: module,
           projection :: module,
-          stream_name :: EspEx.StreamName.t()
+          stream_name :: EspEx.StreamName.t(),
+          opts :: fetch_opts()
         ) :: {struct(), EspEx.EventBus.version() | nil}
   def fetch(
         event_bus,
         entity_builder,
         event_transformer,
         projection,
-        %EspEx.StreamName{} = stream_name
+        %EspEx.StreamName{} = stream_name,
+        opts \\ []
       )
       when is_atom(event_bus) and is_atom(entity_builder) and
              is_atom(event_transformer) and is_atom(projection) do
     new_ent = entity_builder.new()
+    batch_size = Keyword.get(opts, :batch_size, 10)
 
-    event_bus.stream(stream_name)
+    event_bus.stream(stream_name, 0, batch_size)
     |> Stream.map(event_and_position(event_transformer))
     |> Enum.reduce({new_ent, nil}, fn {event, position}, {entity, _} ->
       Logger.debug(fn ->

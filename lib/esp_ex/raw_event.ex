@@ -31,4 +31,17 @@ defmodule EspEx.RawEvent do
             data: %{},
             metadata: %EspEx.RawEvent.Metadata{},
             time: nil
+
+  def caused_by(%__MODULE__{} = event, %__MODULE__{} = other_event) do
+    meta = event.metadata
+
+    other_meta =
+      other_event.metadata
+      |> Map.put(:correlation_stream_name, meta.correlation_stream_name)
+      |> Map.put(:causation_message_stream_name, event.stream_name)
+      |> Map.put(:causation_message_position, event.position)
+      |> Map.put(:causation_message_global_position, event.global_position)
+
+    Map.put(other_event, :metadata, other_meta)
+  end
 end

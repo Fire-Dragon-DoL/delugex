@@ -50,7 +50,7 @@ defmodule EspEx.ConsumerTest do
 
       %Events.Renamed{}
       |> Event.to_raw_event(stream_name: @stream_name)
-      |> EventBus.write()
+      |> EventBus.write!()
 
       assert_receive {:renamed}, 500
 
@@ -63,7 +63,7 @@ defmodule EspEx.ConsumerTest do
 
       %Events.Spammed{}
       |> Event.to_raw_event(stream_name: @stream_name)
-      |> EventBus.write()
+      |> EventBus.write!()
 
       assert_receive {:spammed}, 500
 

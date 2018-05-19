@@ -22,9 +22,9 @@ defmodule EspEx.EventBus.PostgresTest do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(EspEx.EventBus.Postgres.Repo)
   end
 
-  describe "Postgres.write" do
+  describe "Postgres.write!" do
     test "writes raw_event and returns version" do
-      version = Postgres.write(@raw_event)
+      version = Postgres.write!(@raw_event)
 
       assert version == 0
     end
@@ -32,8 +32,8 @@ defmodule EspEx.EventBus.PostgresTest do
 
   describe "Postgres.read_last" do
     test "reads last event" do
-      Postgres.write(@raw_event)
-      Postgres.write(@raw_event2)
+      Postgres.write!(@raw_event)
+      Postgres.write!(@raw_event2)
       event = Postgres.read_last(@stream_name)
       data = event.data
 
@@ -49,8 +49,8 @@ defmodule EspEx.EventBus.PostgresTest do
 
   describe "Postgres.read_batch" do
     test "reads events in order" do
-      Postgres.write(@raw_event)
-      Postgres.write(@raw_event2)
+      Postgres.write!(@raw_event)
+      Postgres.write!(@raw_event2)
       events = Postgres.read_batch(@stream_name)
       data = List.last(events).data
 
@@ -58,8 +58,8 @@ defmodule EspEx.EventBus.PostgresTest do
     end
 
     test "reads a list of events" do
-      Postgres.write(@raw_event)
-      Postgres.write(@raw_event2)
+      Postgres.write!(@raw_event)
+      Postgres.write!(@raw_event2)
       events = Postgres.read_batch(@stream_name)
 
       assert length(events) == 2

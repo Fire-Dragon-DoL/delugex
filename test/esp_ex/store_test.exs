@@ -1,7 +1,7 @@
 defmodule EspEx.StoreTest do
   use ExUnit.Case, async: true
 
-  alias Support.EspEx.EventBus.Static, as: EventBus
+  alias EspEx.EventBus.Static, as: EventBus
   alias EspEx.StreamName
 
   defmodule Person do

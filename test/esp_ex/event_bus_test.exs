@@ -1,7 +1,7 @@
 defmodule EspEx.EventBusTest do
   use ExUnit.Case, async: true
 
-  alias Support.EspEx.EventBus.Static, as: EventBus
+  alias EspEx.EventBus.Static, as: EventBus
   alias EspEx.RawEvent
   alias EspEx.StreamName
 
@@ -14,17 +14,15 @@ defmodule EspEx.EventBusTest do
     data: %{name: "Unnamed"}
   }
 
-  describe "EventBus.write_initial" do
-    test "returns true" do
-      written = EventBus.write_initial(@raw_event)
-
-      assert written == true
+  describe "EventBus.write_initial!" do
+    test "doesn't raises on first message" do
+      EventBus.write_initial!(@raw_event)
     end
   end
 
-  describe "EventBus.write" do
+  describe "EventBus.write!" do
     test "returns 3" do
-      version = EventBus.write(@raw_event)
+      version = EventBus.write!(@raw_event)
 
       assert version == 3
     end

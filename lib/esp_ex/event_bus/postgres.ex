@@ -21,16 +21,17 @@ defmodule EspEx.EventBus.Postgres do
   alias EspEx.RawEvent
   alias EspEx.RawEvent.Metadata
 
-  @get_batch_sql """
-  select * from stream_get_batch(
+  @wrong_version "Wrong expected version:"
+  @read_batch_sql """
+  select * from stream_read_batch(
     _stream_name := $1,
     _position    := $2,
     _batch_size  := $3
   )
   """
-  @get_last_sql "select * from stream_get_last(_stream_name := $1)"
-  @write_message_sql """
-  select * from stream_write_message(
+  @read_last_sql "select * from stream_read_last(_stream_name := $1)"
+  @write_sql """
+  select * from stream_write(
     _id               := $1,
     _stream_name      := $2,
     _type             := $3,
@@ -51,13 +52,16 @@ defmodule EspEx.EventBus.Postgres do
     are present)
   - An integer (0+): Representing the expected version
   """
-  def write(%RawEvent{} = raw_event, expected_version \\ nil)
+  def write!(%RawEvent{} = raw_event, expected_version \\ nil)
       when is_expected_version(expected_version) do
-    query(
-      @write_message_sql,
-      raw_event_to_params(raw_event) ++ [to_number_version(expected_version)]
-    ).rows
+    expected_version = to_number_version(expected_version)
+    params = raw_event_to_params(raw_event)
+    params = params ++ [expected_version]
+
+    query(@write_sql, params).rows
     |> rows_to_single_result
+  rescue
+    error in Postgrex.Error -> as_expected_version_error!(error)
   end
 
   @impl EspEx.EventBus
@@ -65,7 +69,7 @@ defmodule EspEx.EventBus.Postgres do
   Retrieve's the last stream by the stream_name (based on greatest position).
   """
   def read_last(%StreamName{} = stream_name) do
-    query(@get_last_sql, [to_string(stream_name)]).rows
+    query(@read_last_sql, [to_string(stream_name)]).rows
     |> rows_to_raw_events
     |> List.last()
   end
@@ -76,7 +80,7 @@ defmodule EspEx.EventBus.Postgres do
   """
   def read_batch(%StreamName{} = stream_name, position \\ 0, batch_size \\ 10)
       when is_version(position) and is_batch_size(batch_size) do
-    query(@get_batch_sql, [to_string(stream_name), position, batch_size]).rows
+    query(@read_batch_sql, [to_string(stream_name), position, batch_size]).rows
     |> rows_to_raw_events
   end
 
@@ -171,5 +175,15 @@ defmodule EspEx.EventBus.Postgres do
   defp symbolize(map) do
     map
     |> Map.new(fn {k, v} -> {String.to_existing_atom(k), v} end)
+  end
+
+  defp as_expected_version_error!(error) do
+    message = to_string(error.message)
+    starts_with = String.starts_with?(message, @wrong_version)
+
+    case starts_with do
+      true -> raise EspEx.EventBus.ExpectedVersionError, message: message
+      _ -> raise error
+    end
   end
 end

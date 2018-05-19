@@ -1,4 +1,9 @@
-defmodule Support.EspEx.EventBus.Static do
+defmodule EspEx.EventBus.Static do
+  @moduledoc false
+
+  # You should never use this EventBus since it doesn't reflect correct
+  # behaviour for an event store (it's static). It's used only in test suite
+
   use EspEx.EventBus
 
   alias EspEx.RawEvent
@@ -33,7 +38,7 @@ defmodule Support.EspEx.EventBus.Static do
   ]
 
   @impl EspEx.EventBus
-  def write(_, _ \\ nil), do: 3
+  def write!(_, _ \\ nil), do: 3
 
   @impl EspEx.EventBus
   def read_last(@stream_name), do: List.last(@messages)

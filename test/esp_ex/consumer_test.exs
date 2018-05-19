@@ -27,7 +27,7 @@ defmodule EspEx.ConsumerTest do
     use EspEx.Consumer,
       event_bus: EventBus,
       event_transformer: Events,
-      stream_name: %StreamName{category: "campaign", types: []}
+      stream_name: StreamName.new("campaign")
 
     use EspEx.Handler
 

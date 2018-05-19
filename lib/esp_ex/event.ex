@@ -5,11 +5,9 @@ defmodule EspEx.Event do
 
   alias EspEx.RawEvent
 
-  @type raw_event_opts :: [
-          id: String.t(),
-          stream_name: EspEx.StreamName.t(),
-          time: NaiveDateTime.t()
-        ]
+  def to_raw_event(event) when is_map(event) do
+    to_raw_event(event, %RawEvent{})
+  end
 
   @spec to_raw_event(
           event :: struct(),
@@ -19,13 +17,8 @@ defmodule EspEx.Event do
       when is_map(event) and is_map(raw_event_base) do
     id = raw_event_base.id || random_uuid()
     time = raw_event_base.time || naive_datetime_now()
-    stream_name = raw_event_base.stream_name || empty_stream_name()
-
-    type =
-      case raw_event_base.type do
-        "" -> type(event)
-        _ -> raw_event_base.type
-      end
+    stream_name = raw_event_base.stream_name
+    type = raw_event_base.type || type(event)
 
     raw_event =
       raw_event_base
@@ -42,34 +35,8 @@ defmodule EspEx.Event do
     raw_event
   end
 
-  @spec to_raw_event(
-          event :: struct(),
-          opts :: raw_event_opts()
-        ) :: EspEx.RawEvent.t()
-  def to_raw_event(event, opts)
-      when is_map(event) and is_list(opts) do
-    opts = raw_event_opts(opts)
-
-    raw_event = %RawEvent{
-      id: Keyword.get(opts, :id),
-      stream_name: Keyword.get(opts, :stream_name),
-      type: type(event),
-      data: Map.from_struct(event),
-      time: Keyword.get(opts, :time)
-    }
-
-    EspEx.Logger.debug(fn ->
-      "Event #{inspect(event)} converted to #{inspect(raw_event)}"
-    end)
-
-    raw_event
-  end
-
-  def to_raw_event(event)
-      when is_map(event) do
-    opts = raw_event_opts([])
-    to_raw_event(event, opts)
-  end
+  @spec type(text :: String.t()) :: String.t()
+  def type(text) when is_bitstring(text), do: text
 
   @spec type(event :: struct) :: String.t()
   def type(%{__struct__: module}) do
@@ -77,17 +44,6 @@ defmodule EspEx.Event do
     |> to_string()
     |> Module.split()
     |> List.last()
-  end
-
-  defp raw_event_opts(opts) do
-    opts
-    |> Keyword.put_new(:id, random_uuid())
-    |> Keyword.put_new(:time, naive_datetime_now())
-    |> Keyword.put_new(:stream_name, empty_stream_name())
-  end
-
-  defp empty_stream_name do
-    EspEx.StreamName.empty()
   end
 
   defp random_uuid do

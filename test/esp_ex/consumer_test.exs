@@ -43,13 +43,14 @@ defmodule EspEx.ConsumerTest do
   end
 
   @stream_name %StreamName{category: "campaign", identifier: "123", types: []}
+  @raw_event_base %EspEx.RawEvent{stream_name: @stream_name}
 
   describe "Consumer" do
     test "handles renamed events" do
       {:ok, pid} = Consumer.start_link(CampaignConsumer, self())
 
       %Events.Renamed{}
-      |> Event.to_raw_event(stream_name: @stream_name)
+      |> Event.to_raw_event(@raw_event_base)
       |> EventBus.write!()
 
       assert_receive {:renamed}, 500
@@ -62,7 +63,7 @@ defmodule EspEx.ConsumerTest do
       {:ok, pid} = Consumer.start_link(CampaignConsumer, self())
 
       %Events.Spammed{}
-      |> Event.to_raw_event(stream_name: @stream_name)
+      |> Event.to_raw_event(@raw_event_base)
       |> EventBus.write!()
 
       assert_receive {:spammed}, 500

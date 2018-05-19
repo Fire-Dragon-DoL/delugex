@@ -42,7 +42,7 @@ defmodule EspEx.ConsumerTest do
     end
   end
 
-  @stream_name %StreamName{category: "campaign", identifier: "123", types: []}
+  @stream_name StreamName.new("campaign", "123")
   @raw_event_base %EspEx.RawEvent{stream_name: @stream_name}
 
   describe "Consumer" do

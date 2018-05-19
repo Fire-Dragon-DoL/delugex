@@ -3,7 +3,6 @@ defmodule EspEx.ConsumerTest do
 
   alias EspEx.EventBus.Postgres, as: EventBus
   alias EspEx.StreamName
-  alias EspEx.Consumer
   alias EspEx.Event
 
   defp truncate_messages do
@@ -47,7 +46,7 @@ defmodule EspEx.ConsumerTest do
 
   describe "Consumer" do
     test "handles renamed events" do
-      {:ok, pid} = Consumer.start_link(CampaignConsumer, self())
+      {:ok, pid} = GenServer.start_link(CampaignConsumer, self())
 
       %Events.Renamed{}
       |> Event.to_raw_event(@raw_event_base)
@@ -55,12 +54,12 @@ defmodule EspEx.ConsumerTest do
 
       assert_receive {:renamed}, 500
 
-      Consumer.stop(pid)
+      GenServer.stop(pid)
       truncate_messages()
     end
 
     test "handles spammed events" do
-      {:ok, pid} = Consumer.start_link(CampaignConsumer, self())
+      {:ok, pid} = GenServer.start_link(CampaignConsumer, self())
 
       %Events.Spammed{}
       |> Event.to_raw_event(@raw_event_base)
@@ -68,7 +67,7 @@ defmodule EspEx.ConsumerTest do
 
       assert_receive {:spammed}, 500
 
-      Consumer.stop(pid)
+      GenServer.stop(pid)
       truncate_messages()
     end
   end

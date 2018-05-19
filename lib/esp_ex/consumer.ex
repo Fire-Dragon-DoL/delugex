@@ -9,42 +9,6 @@ defmodule EspEx.Consumer do
             events: [],
             meta: nil
 
-  def start(module, meta \\ nil, opts \\ []) do
-    module
-    |> GenServer.start(meta, opts)
-    |> listen()
-    |> request_events()
-  end
-
-  def start_link(module, meta \\ nil, opts \\ []) do
-    module
-    |> GenServer.start_link(meta, opts)
-    |> listen()
-    |> request_events()
-  end
-
-  def stop(server, reason \\ :normal, timeout \\ :infinity) do
-    GenServer.stop(server, reason, timeout)
-  end
-
-  defp listen({:ok, pid}) do
-    GenServer.call(pid, {:listen})
-    {:ok, pid}
-  rescue
-    RuntimeError ->
-      Process.exit(pid, :kill)
-      {:error, "Consumer can't start listener"}
-  end
-
-  defp listen(result), do: result
-
-  defp request_events({:ok, pid} = result) do
-    GenServer.cast(pid, {:request_events})
-    result
-  end
-
-  defp request_events(result), do: result
-
   @doc """
   - `:event_bus` **required** an `EspEx.EventBus` implementation
   - `:event_transformer` **required** an `EspEx.EventTransformer`
@@ -83,19 +47,16 @@ defmodule EspEx.Consumer do
       end
 
       @impl GenServer
-      def init(meta), do: {:ok, %@consumer{meta: meta}}
-
-      @impl GenServer
-      def handle_call({:listen}, _, %@consumer{listener: nil} = consumer) do
+      def init(meta) do
         {:ok, listener} = @event_bus.listen(@stream_name, @listen_opts)
 
-        consumer = Map.put(consumer, :listener, listener)
-        {:reply, {:ok, nil}, consumer}
-      end
+        consumer =
+          %@consumer{meta: meta}
+          |> Map.put(:listener, listener)
 
-      @impl GenServer
-      def handle_call({:listen}, _, %@consumer{} = consumer) do
-        {:reply, {:error, "Already listening"}, consumer}
+        GenServer.cast(self(), {:request_events})
+
+        {:ok, consumer}
       end
 
       @impl GenServer
@@ -169,12 +130,15 @@ defmodule EspEx.Consumer do
         end)
 
         handle_event(raw_event, meta)
+        position = EspEx.RawEvent.next_position(raw_event.position)
+        global_position = raw_event.global_position
+        global_position = EspEx.RawEvent.next_global_position(global_position)
 
         consumer =
           consumer
           |> Map.put(:events, events)
-          |> Map.put(:position, raw_event.position + 1)
-          |> Map.put(:global_position, raw_event.global_position + 1)
+          |> Map.put(:position, position)
+          |> Map.put(:global_position, global_position)
 
         process_next_event()
 

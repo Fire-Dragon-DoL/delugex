@@ -17,15 +17,9 @@ defmodule EspEx.RawEvent do
           time: NaiveDateTime.t() | nil
         }
 
-  @enforce_keys [
-    :id,
-    :stream_name,
-    :type,
-    :data
-  ]
-  defstruct id: "",
-            stream_name: EspEx.StreamName.empty(),
-            type: "",
+  defstruct id: nil,
+            stream_name: nil,
+            type: nil,
             position: nil,
             global_position: nil,
             data: %{},

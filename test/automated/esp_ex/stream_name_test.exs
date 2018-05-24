@@ -159,6 +159,13 @@ defmodule EspEx.StreamNameTest do
         from_string(":-")
       end
     end
+
+    test "considers colon as part of identifier when after dash" do
+      text = from_string("campaign-123:456")
+      stream = new("campaign", "123:456", [])
+
+      assert text == stream
+    end
   end
 
   describe "StreamName.new" do

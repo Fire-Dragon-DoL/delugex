@@ -1,13 +1,13 @@
-defmodule EspEx.ConsumerTest do
+defmodule EspEx.Consumer.PostgresTest do
   use ExUnit.Case
 
-  alias EspEx.EventBus.Postgres, as: EventBus
+  alias EspEx.MessageStore.Postgres, as: MessageStore
   alias EspEx.StreamName
   alias EspEx.Event
 
   defp truncate_messages do
-    EspEx.EventBus.Postgres.Repo
-    |> Ecto.Adapters.SQL.query!("TRUNCATE TABLE messages", [])
+    EspEx.MessageStore.Postgres.Repo
+    |> Ecto.Adapters.SQL.query!("TRUNCATE TABLE messages RESTART IDENTITY", [])
   end
 
   defmodule Events do
@@ -23,8 +23,7 @@ defmodule EspEx.ConsumerTest do
   end
 
   defmodule CampaignConsumer do
-    use EspEx.Consumer,
-      event_bus: EventBus,
+    use EspEx.Consumer.Postgres,
       event_transformer: Events,
       stream_name: StreamName.new("campaign")
 
@@ -44,13 +43,13 @@ defmodule EspEx.ConsumerTest do
   @stream_name StreamName.new("campaign", "123")
   @raw_event_base %EspEx.RawEvent{stream_name: @stream_name}
 
-  describe "Consumer" do
+  describe "Consumer.Postgres" do
     test "handles renamed events" do
       {:ok, pid} = GenServer.start_link(CampaignConsumer, self())
 
       %Events.Renamed{}
       |> Event.to_raw_event(@raw_event_base)
-      |> EventBus.write!()
+      |> MessageStore.write!()
 
       assert_receive {:renamed}, 500
 
@@ -63,7 +62,7 @@ defmodule EspEx.ConsumerTest do
 
       %Events.Spammed{}
       |> Event.to_raw_event(@raw_event_base)
-      |> EventBus.write!()
+      |> MessageStore.write!()
 
       assert_receive {:spammed}, 500
 

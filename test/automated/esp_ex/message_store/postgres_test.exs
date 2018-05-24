@@ -1,25 +1,25 @@
-defmodule EspEx.EventBus.PostgresTest do
+defmodule EspEx.MessageStore.PostgresTest do
   use ExUnit.Case, async: true
-  alias EspEx.EventBus.Postgres
+  alias EspEx.MessageStore.Postgres
   alias EspEx.StreamName
   alias EspEx.RawEvent
 
   @stream_name %StreamName{category: "campaign", identifier: "123", types: []}
   @raw_event %RawEvent{
-    id: Ecto.UUID.generate(),
+    id: UUID.uuid4(),
     stream_name: @stream_name,
     type: "Updated",
     data: %{name: "Unnamed"}
   }
   @raw_event2 %RawEvent{
-    id: Ecto.UUID.generate(),
+    id: UUID.uuid4(),
     stream_name: @stream_name,
     type: "Updated",
     data: %{name: "Jerry"}
   }
 
   setup do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(EspEx.EventBus.Postgres.Repo)
+    :ok = Ecto.Adapters.SQL.Sandbox.checkout(EspEx.MessageStore.Postgres.Repo)
   end
 
   describe "Postgres.write!" do

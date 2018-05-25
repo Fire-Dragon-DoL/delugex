@@ -55,6 +55,9 @@ defmodule EspEx.MessageStore do
 
   defguard is_batch_size(size) when is_integer(size) and size >= 0
 
+  def to_expected_version(nil), do: :no_stream
+  def to_expected_version(version) when is_version(version), do: version
+
   @spec write_initial!(
           message_store :: module,
           raw_event :: EspEx.RawEvent.t()

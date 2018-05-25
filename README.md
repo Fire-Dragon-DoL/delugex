@@ -188,8 +188,9 @@ MessageStore.write!(raw_event)
 raw_event = Event.to_raw_event(createdAgain, stream_name)
 MessageStore.write!(raw_event)
 
-person = Person.Store.fetch("123")
-# %Person{name: "francesco"}
+{person, version} = Person.Store.fetch("123")
+version # => 1
+person # => %Person{name: "francesco"}
 # Notice how it's not "jerry", since 2 events have been applied
 ```
 

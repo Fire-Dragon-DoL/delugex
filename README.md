@@ -193,6 +193,53 @@ person = Person.Store.fetch("123")
 # Notice how it's not "jerry", since 2 events have been applied
 ```
 
+### `Consumer.Postgres`
+
+Listen for incoming events and process them. Assume all the code in
+[Store](#store)
+
+```elixir
+defmodule Person.Consumer do
+  use EspEx.Consumer.Postgres,
+    # required
+    event_transformer: Person.Events,
+    # required
+    stream_name: EspEx.StreamName.new("person")
+    # optional, a string uniquely identifying this consumer. Defaults to module
+    # name
+    identifier: __MODULE__,
+    # optional, a module handling events for this module. Defaults to this
+    # module
+    handler: __MODULE__,
+    # optional, check the documentation, you should never need this
+    listen_opts: []
+
+  use EspEx.Handler
+
+  def handle(%Person.Events.Created{} = created, _, _) do
+    IO.puts("A person was created! Hello #{created.name}")
+  end
+end
+
+{:ok, consumer} = GenServer.start_link(Person.Consumer, nil)
+
+
+created = %Person.Events.Created{name: "jerry"}
+stream_name = EspEx.StreamName.from_string("person-123")
+
+alias EspEx.MessageStore.Postgres, as: MessageStore
+
+raw_event = Event.to_raw_event(created, stream_name)
+MessageStore.write!(raw_event)
+
+# When the consumer receives the message, it will print:
+# A person was created! Hello jerry
+```
+
+### `Handler`
+
+Check [Consumer.Postgres](#consumerpostgres)
+
 ## Licensing
 
 This code is inspired and partially reimplements [eventide](https://eventide-project.org/), as such is also subject to the [eventide LICENSE](eventide-LICENSE)

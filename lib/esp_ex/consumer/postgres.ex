@@ -1,7 +1,9 @@
 defmodule EspEx.Consumer.Postgres do
   @moduledoc """
   Listen to a stream allowing to handle any incoming events using postgres
-  adapter
+  adapter.
+  The value passed to this Consumer as second argument of `start_link` is
+  passed as 3rd argument of `handle`
   """
 
   alias EspEx.Consumer

@@ -81,7 +81,7 @@ MessageStore.write!(raw_event, 2) # => raises ExpectedVersionError
 ### `EventTransformer`
 
 ```elixir
-defmodule Person.Events
+defmodule Person.Events do
   use EventTransformer,
     # optional, default to this module
     events_module: __MODULE__

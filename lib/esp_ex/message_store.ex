@@ -20,6 +20,12 @@ defmodule EspEx.MessageStore do
             ) :: version()
   # Raises `EspEx.MessageStore.ExpectedVersionError` in case of version violation
   @callback write_initial!(raw_event :: EspEx.RawEvent.t()) :: no_return()
+  # Raises `EspEx.MessageStore.ExpectedVersionError` in case of version violation
+  @callback write_batch!(
+              raw_events :: list(EspEx.RawEvent.t()),
+              stream_name :: EspEx.StreamName.t(),
+              expected_version :: expected_version()
+            ) :: version()
   @callback read_last(stream_name :: EspEx.StreamName.t()) ::
               EspEx.RawEvent.t() | nil
   @callback read_batch(

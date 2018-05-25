@@ -28,6 +28,37 @@ defmodule EspEx.MessageStore.PostgresTest do
 
       assert version == 0
     end
+
+    test "raises when expected version differs from actual" do
+      assert_raise EspEx.MessageStore.ExpectedVersionError, fn ->
+        Postgres.write!(@raw_event, 30)
+      end
+    end
+  end
+
+  describe "Postgres.write_batch!" do
+    test "writes raw_events and returns version" do
+      version =
+        Postgres.write_batch!(
+          [@raw_event, @raw_event2],
+          @stream_name,
+          :no_stream
+        )
+
+      assert version == 1
+    end
+
+    test "raises when nothing supplied" do
+      assert_raise EspEx.MessageStore.EmptyBatchError, fn ->
+        Postgres.write_batch!([], @stream_name)
+      end
+    end
+
+    test "raises when expected version differs from actual" do
+      assert_raise EspEx.MessageStore.ExpectedVersionError, fn ->
+        Postgres.write_batch!([@raw_event, @raw_event2], @stream_name, 30)
+      end
+    end
   end
 
   describe "Postgres.read_last" do

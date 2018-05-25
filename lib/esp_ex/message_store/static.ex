@@ -41,6 +41,9 @@ defmodule EspEx.MessageStore.Static do
   def write!(_, _ \\ nil), do: 3
 
   @impl EspEx.MessageStore
+  def write_batch!(_, _, _ \\ nil), do: 3
+
+  @impl EspEx.MessageStore
   def read_last(@stream_name), do: List.last(@messages)
 
   @impl EspEx.MessageStore

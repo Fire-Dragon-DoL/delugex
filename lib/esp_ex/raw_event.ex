@@ -26,21 +26,21 @@ defmodule EspEx.RawEvent do
             metadata: %EspEx.RawEvent.Metadata{},
             time: nil
 
-  def caused_by(%__MODULE__{} = event, %__MODULE__{} = other_event) do
-    meta = event.metadata
-    correlation_stream_name = to_string(meta.correlation_stream_name)
-    reply_stream_name = to_string(meta.reply_stream_name)
-    causation_message_stream_name = to_string(event.stream_name)
+  def caused_by(%__MODULE__{} = event, %__MODULE__{} = causation) do
+    meta = causation.metadata
+    correlation_stream_name = to_nil_or_str(meta.correlation_stream_name)
+    reply_stream_name = to_nil_or_str(meta.reply_stream_name)
+    causation_message_stream_name = to_nil_or_str(causation.stream_name)
 
-    other_meta =
-      other_event.metadata
+    event_meta =
+      event.metadata
       |> Map.put(:correlation_stream_name, correlation_stream_name)
       |> Map.put(:reply_stream_name, reply_stream_name)
       |> Map.put(:causation_message_stream_name, causation_message_stream_name)
-      |> Map.put(:causation_message_position, event.position)
-      |> Map.put(:causation_message_global_position, event.global_position)
+      |> Map.put(:causation_message_position, causation.position)
+      |> Map.put(:causation_message_global_position, causation.global_position)
 
-    Map.put(other_event, :metadata, other_meta)
+    Map.put(event, :metadata, event_meta)
   end
 
   def next_position(position) when is_integer(position), do: position + 1
@@ -48,4 +48,7 @@ defmodule EspEx.RawEvent do
   def next_global_position(global_position) when is_integer(global_position) do
     global_position + 1
   end
+
+  defp to_nil_or_str(nil), do: nil
+  defp to_nil_or_str(value), do: to_string(value)
 end

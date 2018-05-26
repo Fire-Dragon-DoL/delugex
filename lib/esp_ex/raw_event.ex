@@ -43,7 +43,10 @@ defmodule EspEx.RawEvent do
     Map.put(event, :metadata, event_meta)
   end
 
+  def next_position(nil), do: 0
   def next_position(position) when is_integer(position), do: position + 1
+
+  def next_global_position(nil), do: 0
 
   def next_global_position(global_position) when is_integer(global_position) do
     global_position + 1

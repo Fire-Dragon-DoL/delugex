@@ -28,12 +28,15 @@ defmodule EspEx.RawEvent do
 
   def caused_by(%__MODULE__{} = event, %__MODULE__{} = other_event) do
     meta = event.metadata
+    correlation_stream_name = to_string(meta.correlation_stream_name)
+    reply_stream_name = to_string(meta.reply_stream_name)
+    causation_message_stream_name = to_string(event.stream_name)
 
     other_meta =
       other_event.metadata
-      |> Map.put(:correlation_stream_name, meta.correlation_stream_name)
-      |> Map.put(:reply_stream_name, meta.reply_stream_name)
-      |> Map.put(:causation_message_stream_name, event.stream_name)
+      |> Map.put(:correlation_stream_name, correlation_stream_name)
+      |> Map.put(:reply_stream_name, reply_stream_name)
+      |> Map.put(:causation_message_stream_name, causation_message_stream_name)
       |> Map.put(:causation_message_position, event.position)
       |> Map.put(:causation_message_global_position, event.global_position)
 

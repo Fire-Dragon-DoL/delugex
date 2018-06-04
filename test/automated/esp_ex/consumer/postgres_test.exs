@@ -45,7 +45,7 @@ defmodule EspEx.Consumer.PostgresTest do
 
   describe "Consumer.Postgres" do
     test "handles renamed events" do
-      {:ok, pid} = GenServer.start_link(CampaignConsumer, self())
+      _pid = start_supervised!({CampaignConsumer, self()})
 
       %Events.Renamed{}
       |> Event.to_raw_event(@raw_event_base)
@@ -53,12 +53,11 @@ defmodule EspEx.Consumer.PostgresTest do
 
       assert_receive {:renamed}, 500
 
-      GenServer.stop(pid)
       truncate_messages()
     end
 
     test "handles spammed events" do
-      {:ok, pid} = GenServer.start_link(CampaignConsumer, self())
+      _pid = start_supervised!({CampaignConsumer, self()})
 
       %Events.Spammed{}
       |> Event.to_raw_event(@raw_event_base)
@@ -66,7 +65,6 @@ defmodule EspEx.Consumer.PostgresTest do
 
       assert_receive {:spammed}, 500
 
-      GenServer.stop(pid)
       truncate_messages()
     end
   end

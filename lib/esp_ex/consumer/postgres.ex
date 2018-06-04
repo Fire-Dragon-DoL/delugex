@@ -37,6 +37,10 @@ defmodule EspEx.Consumer.Postgres do
 
       use GenServer
 
+      def start_link(state, opts \\ []) do
+        GenServer.start_link(__MODULE__, state, opts)
+      end
+
       @impl GenServer
       def init(meta) do
         {:ok, listener} = Consumer.listen(@conf)

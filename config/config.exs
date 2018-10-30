@@ -9,12 +9,14 @@ config :logger,
 
 config :ecto, json_library: Jason
 
-config :esp_ex, EspEx.MessageStore.Postgres.Repo,
+config :delugex, Delugex.MessageStore.Postgres.Repo,
   adapter: Ecto.Adapters.Postgres,
-  database: System.get_env("ESPEX_DATABASE") || "esp_ex_dev",
-  username: System.get_env("ESPEX_USER") || "postgres",
-  password: System.get_env("ESPEX_PASSWORD") || "postgres",
-  hostname: System.get_env("ESPEX_HOSTNAME") || "localhost",
-  types: EspEx.MessageStore.Postgres.Types
+  pool_size: 15
+
+config :delugex, Delugex.StreamName, adapter: Delugex.Stream.Name
 
 import_config "./environment/#{Mix.env()}.exs"
+
+if File.exists?(Path.expand("./environment/#{Mix.env()}.secret.exs", __DIR__)) do
+  import_config "./environment/#{Mix.env()}.secret.exs"
+end

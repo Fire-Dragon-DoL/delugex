@@ -1,23 +1,27 @@
-# EspEx
+# Delugex
+
+## TODO
+
+- Database script for Listen on triggers
 
 Evented system framework
 
 ## Installation
 
 If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `esp_ex` to your list of dependencies in `mix.exs`:
+by adding `delugex` to your list of dependencies in `mix.exs`:
 
 ```elixir
 def deps do
   [
-    {:esp_ex, "~> 0.1.0"}
+    {:delugex, "~> 0.1.0"}
   ]
 end
 ```
 
 Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
 and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at [https://hexdocs.pm/esp_ex](https://hexdocs.pm/esp_ex).
+be found at [https://hexdocs.pm/delugex](https://hexdocs.pm/delugex).
 
 ## Index
 
@@ -61,8 +65,8 @@ Assuming `alias MessageStore.Postgres, as: MessageStore` in all the following
 examples:
 
 ```elixir
-stream_name = EspEx.StreamName.new("person", "123")
-raw_event = %EspEx.RawEvent{
+stream_name = Delugex.StreamName.new("person", "123")
+raw_event = %Delugex.RawEvent{
   type: "Created",
   data: %{name: "Some Name"}
   stream_name: stream_name
@@ -91,8 +95,8 @@ defmodule Person.Events do
   end
 end
 
-stream_name = EspEx.StreamName.new("person", "123")
-raw_event = %EspEx.RawEvent{
+stream_name = Delugex.StreamName.new("person", "123")
+raw_event = %Delugex.RawEvent{
   type: "Created",
   data: %{name: "Some Name"}
   stream_name: stream_name
@@ -101,7 +105,7 @@ raw_event = %EspEx.RawEvent{
 Person.Events.to_event(raw_event) # => %Created{name: "Some Name"}
 
 raw_event = Map.put(raw_event, :type, "Renamed")
-Person.Events.to_event(raw_event) # => %EspEx.Event.Unknown{...}
+Person.Events.to_event(raw_event) # => %Delugex.Event.Unknown{...}
 ```
 
 You can customize the function `to_event` however you want.
@@ -120,7 +124,7 @@ defmodule Person do
 end
 
 defmodule Person.Projection do
-  use EspEx.Projection
+  use Delugex.Projection
 
   def apply(%Person{} = person, %Person.Events.Created{} = event) do
     Map.put(person, :name, event.name)
@@ -142,7 +146,7 @@ Creates a stream name. A stream name is in the format:
 StreamName provides 2 very helpful constructors:
 
 ```elixir
-alias EspEx.StreamName
+alias Delugex.StreamName
 
 stream_name = StreamName.new("person", "123")
 to_string(stream_name) # => "person-123"
@@ -162,9 +166,9 @@ Fetches all events from a stream and project them. Assume the module
 
 ```elixir
 defmodule Person.Store do
-  use EspEx.Store,
+  use Delugex.Store,
     # required, an implementation of `MessageStore`
-    message_store: EspEx.MessageStore.Postgres,
+    message_store: Delugex.MessageStore.Postgres,
     # required, anything which responds to `new/0` and returns needed entity
     # initialized
     entity_builder: Person,
@@ -174,14 +178,14 @@ defmodule Person.Store do
     projection: Person.Projection,
     # required, you want this to be a category stream (stream without
     # identifer)
-    stream_name: EspEx.StreamName.new("person")
+    stream_name: Delugex.StreamName.new("person")
 end
 
 created = %Person.Events.Created{name: "jerry"}
 createdAgain = %Person.Events.Created{name: "francesco"}
-stream_name = EspEx.StreamName.from_string("person-123")
+stream_name = Delugex.StreamName.from_string("person-123")
 
-alias EspEx.MessageStore.Postgres, as: MessageStore
+alias Delugex.MessageStore.Postgres, as: MessageStore
 
 raw_event = Event.to_raw_event(created, stream_name)
 MessageStore.write!(raw_event)
@@ -201,11 +205,11 @@ Listen for incoming events and process them. Assume all the code in
 
 ```elixir
 defmodule Person.Consumer do
-  use EspEx.Consumer.Postgres,
+  use Delugex.Consumer.Postgres,
     # required
     event_transformer: Person.Events,
     # required
-    stream_name: EspEx.StreamName.new("person")
+    stream_name: Delugex.StreamName.new("person")
     # optional, a string uniquely identifying this consumer. Defaults to module
     # name
     identifier: __MODULE__,
@@ -215,7 +219,7 @@ defmodule Person.Consumer do
     # optional, check the documentation, you should never need this
     listen_opts: []
 
-  use EspEx.Handler
+  use Delugex.Handler
 
   def handle(%Person.Events.Created{} = created, _, _) do
     IO.puts("A person was created! Hello #{created.name}")
@@ -226,9 +230,9 @@ end
 
 
 created = %Person.Events.Created{name: "jerry"}
-stream_name = EspEx.StreamName.from_string("person-123")
+stream_name = Delugex.StreamName.from_string("person-123")
 
-alias EspEx.MessageStore.Postgres, as: MessageStore
+alias Delugex.MessageStore.Postgres, as: MessageStore
 
 raw_event = Event.to_raw_event(created, stream_name)
 MessageStore.write!(raw_event)

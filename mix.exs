@@ -1,13 +1,13 @@
-defmodule EspEx.MixProject do
+defmodule Delugex.MixProject do
   use Mix.Project
 
   @version "VERSION" |> File.read!() |> String.trim()
 
   def project do
     [
-      app: :esp_ex,
+      app: :delugex,
       version: @version,
-      elixir: "~> 1.6",
+      elixir: "~> 1.7",
       elixirc_paths: elixirc_paths(Mix.env()),
       deps: deps(),
       dialyzer: [
@@ -17,9 +17,8 @@ defmodule EspEx.MixProject do
           :error_handling,
           :race_conditions
         ],
-        paths: ["_build/#{Mix.env()}/lib/esp_ex/consolidated"]
+        paths: ["_build/#{Mix.env()}/lib/delugex/consolidated"]
       ]
-      # aliases: [test: "test --no-start"]
     ]
   end
 
@@ -27,7 +26,7 @@ defmodule EspEx.MixProject do
   def application do
     [
       extra_applications: [:logger],
-      mod: {EspEx.Application, []}
+      mod: {Delugex.Application, []}
     ]
   end
 
@@ -35,10 +34,10 @@ defmodule EspEx.MixProject do
   defp deps do
     [
       {:dialyxir, "~> 0.5", only: [:dev], runtime: false},
-      {:ecto, "~> 2.2"},
-      {:postgrex, "~> 0.13"},
-      {:jason, "~> 1.0.0"},
-      {:uuid, "~> 1.1"}
+      {:ecto, "~> 3.0"},
+      {:ecto_sql, "~> 3.0.0-rc.1"},
+      {:postgrex, "~> 0.14"},
+      {:jason, "~> 1.1"}
     ]
   end
 

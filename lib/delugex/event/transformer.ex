@@ -2,7 +2,6 @@ defmodule Delugex.Event.Transformer do
   @moduledoc false
 
   alias Delugex.Event
-  alias Delugex.StreamName
 
   def to_event(term) when is_map(term) do
     to_event(term, %Event{})
@@ -35,13 +34,13 @@ defmodule Delugex.Event.Transformer do
           term :: struct(),
           stream_name :: Delugex.StreamName.t()
         ) :: Delugex.Event.t()
-  def to_event(term, %StreamName{} = stream_name) when is_map(term) do
+  def to_event(term, stream_name) when is_map(term) do
     event_base = %Event{stream_name: stream_name}
 
     to_event(term, event_base)
   end
 
   defp random_uuid do
-    UUID.uuid4()
+    Ecto.UUID.generate()
   end
 end

@@ -16,7 +16,6 @@ defmodule Delugex.Event do
             data: %{},
             metadata: %Delugex.Event.Metadata{}
 
-  alias Delugex.StreamName
   alias Delugex.Event.Transformable
 
   def to_event(term) when is_map(term) do
@@ -35,7 +34,7 @@ defmodule Delugex.Event do
           term :: any(),
           stream_name :: Delugex.StreamName.t()
         ) :: Delugex.Event.t()
-  def to_event(term, %StreamName{} = stream_name) when is_map(term) do
+  def to_event(term, stream_name) when is_map(term) do
     Transformable.to_event(term, stream_name)
   end
 

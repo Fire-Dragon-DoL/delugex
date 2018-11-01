@@ -75,9 +75,9 @@ defmodule Delugex.Consumer do
     %{handler: handler, event_transformer: event_transformer} = config
 
     handle_event(handler, event_transformer, raw, meta)
-    position = Event.Raw.next_position(raw.position)
+    position = Raw.next_position(raw.position)
     global_position = raw.global_position
-    global_position = Event.Raw.next_global_position(global_position)
+    global_position = Raw.next_global_position(global_position)
 
     state =
       state

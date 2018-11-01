@@ -21,10 +21,6 @@ defmodule Delugex.Store do
     `Delugex.StreamName`
   """
   defmacro __using__(opts \\ []) do
-    message_store = Keyword.get(opts, :message_store)
-    event_transformer = Keyword.get(opts, :event_transformer)
-    projection = Keyword.get(opts, :projection)
-    stream_name = Keyword.get(opts, :stream_name)
     opts = Macro.escape(opts)
 
     quote location: :keep do
@@ -62,7 +58,7 @@ defmodule Delugex.Store do
         message_store,
         event_transformer,
         projection,
-        %Delugex.StreamName{} = stream_name,
+        stream_name,
         opts \\ []
       )
       when is_atom(message_store) and is_atom(event_transformer) and

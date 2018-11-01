@@ -28,7 +28,7 @@ defmodule Delugex.EventTransformer do
       @behaviour unquote(__MODULE__)
 
       @impl unquote(__MODULE__)
-      def transform(%Event.Raw{} = raw) do
+      def transform(%Raw{} = raw) do
         events_module = unquote(opts)[:events_module]
 
         case events_module do
@@ -44,7 +44,7 @@ defmodule Delugex.EventTransformer do
   by the user, in a module defined by the user, the only known things is that
   it has the `event_id` field and the `raw` field.
 
-  Takes a %Event.Raw and it creates a new Event, based on events_module plus the
+  Takes a %Raw and it creates a new Event, based on events_module plus the
   `:type` field in Event.Raw. So it becomes `#{events_module}.#{type}` (check
   for errors, create a custom struct %Delugex.Events.Unknown if it's missing).
   Then copy `event_id` to `event_id`. Then, it grabs all the remaining
@@ -52,7 +52,7 @@ defmodule Delugex.EventTransformer do
   in `:raw` field. Finally all fields in `data` are
   copied in the Event (which is a map)
   """
-  def transform(events_module, %Event.Raw{type: type} = raw)
+  def transform(events_module, %Raw{type: type} = raw)
       when is_atom(events_module) do
     with {:ok, event_module} <- find_module(events_module, type) do
       struct(event_module, raw.data)

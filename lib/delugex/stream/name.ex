@@ -57,12 +57,13 @@ defmodule Delugex.Stream.Name do
   @spec decode(text :: String.t()) :: Name.t()
   def decode(text) when is_binary(text) do
     category = extract_category(text)
-    id = extract_id(no_category, types_text)
+    id = extract_id(text, category)
 
     new(category, id)
   end
 
   defp extract_category(string) do
+    string
     |> String.split("-")
     |> List.first()
   end

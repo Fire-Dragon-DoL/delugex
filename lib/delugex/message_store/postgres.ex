@@ -263,11 +263,13 @@ defmodule Delugex.MessageStore.Postgres do
   end
 
   defp decode_stream_name(text_stream_name) do
-    adapter =
+    decoder =
       __MODULE__
-      |> Application.get_env()
+      |> Application.get_env(Delugex.MessageStore.Postgres)
       |> Keyword.fetch!(:stream_name)
       |> Keyword.fetch!(:decoder)
+
+    decoder.decode(text_stream_name)
   end
 
   defp decode_metadata(map) do

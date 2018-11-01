@@ -17,7 +17,7 @@ end
 defimpl Delugex.Event.Transformable, for: Delugex.Event do
   @spec type(event :: Delugex.Event.t() | String.t()) :: String.t()
   def type(event_or_text) when is_binary(event_or_text), do: event_or_text
-  def type(event_or_text) do: event_or_text.type
+  def type(event_or_text), do: event_or_text.type
 
   def to_event(event), do: event
 
@@ -58,7 +58,7 @@ defimpl Delugex.Event.Transformable, for: Any do
           term :: any(),
           stream_name :: Delugex.StreamName.t()
         ) :: Delugex.Event.t()
-  def to_event(term, %Delugex.StreamName{} = stream_name) do
+  def to_event(term, stream_name) do
     Delugex.Event.Transformer.to_event(term, stream_name)
   end
 end

@@ -34,10 +34,10 @@ defmodule Delugex.MixProject do
   defp deps do
     [
       {:dialyxir, "~> 0.5", only: [:dev], runtime: false},
-      {:ecto, "~> 3.0"},
-      {:ecto_sql, "~> 3.0.0-rc.1"},
-      {:postgrex, "~> 0.14"},
-      {:jason, "~> 1.1"}
+      {:ecto, ">= 3.0.0"},
+      {:ecto_sql, ">= 3.0.0"},
+      {:postgrex, ">= 0.14.0"},
+      {:jason, ">= 1.1.0"}
     ]
   end
 

@@ -47,7 +47,7 @@ defmodule Delugex.Projection do
 
       @impl unquote(__MODULE__)
       def apply_all(entity, events) when is_list(events) do
-        unquote(__MODULE__).apply_all(entity, __MODULE__, events)
+        unquote(__MODULE__).apply_all(__MODULE__, entity, events)
       end
     end
   end
@@ -59,11 +59,11 @@ defmodule Delugex.Projection do
   It also logs (debug) info whenever an event is applied
   """
   @spec apply_all(
-          current_entity :: any(),
           projection :: module,
+          current_entity :: any(),
           events :: Enumerable.t()
         ) :: any()
-  def apply_all(current_entity, projection, events \\ []) do
+  def apply_all(projection, current_entity, events \\ []) do
     Enum.reduce(events, current_entity, fn event, entity ->
       Logger.debug(fn ->
         "Applying #{event.__struct__}"

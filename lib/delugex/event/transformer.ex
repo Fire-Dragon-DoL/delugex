@@ -14,7 +14,6 @@ defmodule Delugex.Event.Transformer do
         ) :: Delugex.Event.t()
   def to_event(term, %Event{} = event_base) when is_map(term) do
     id = event_base.id || random_uuid()
-    time = event_base.time || naive_datetime_now()
     stream_name = event_base.stream_name
     type = event_base.type || Delugex.Event.type(term)
 
@@ -24,7 +23,6 @@ defmodule Delugex.Event.Transformer do
       |> Map.put(:stream_name, stream_name)
       |> Map.put(:type, type)
       |> Map.put(:data, Map.from_struct(term))
-      |> Map.put(:time, time)
 
     Delugex.Logger.debug(fn ->
       "Event #{inspect(term)} converted to #{inspect(raw)}"
@@ -45,10 +43,5 @@ defmodule Delugex.Event.Transformer do
 
   defp random_uuid do
     UUID.uuid4()
-  end
-
-  defp naive_datetime_now do
-    DateTime.utc_now()
-    |> DateTime.to_naive()
   end
 end

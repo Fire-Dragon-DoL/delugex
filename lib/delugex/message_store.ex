@@ -78,7 +78,7 @@ defmodule Delugex.MessageStore do
         ) :: Enumerable.t()
   def stream(
         message_store,
-        %Delugex.StreamName{} = stream_name,
+        stream_name,
         position \\ 0,
         batch_size \\ 10
       )

@@ -27,30 +27,30 @@ defmodule Delugex.MessageStore.Postgres do
 
   @stream_read_batch_sql """
   select * from get_stream_messages(
-    _stream_name := $1,
-    _position    := $2,
-    _batch_size  := $3
+    _stream_name := $1::varchar,
+    _position    := $2::bigint,
+    _batch_size  := $3::bigint
   )
   """
   @category_read_batch_sql """
   select * from get_category_messages(
-    _stream_name := $1,
-    _position    := $2,
-    _batch_size  := $3
+    _category_name := $1::varchar,
+    _position      := $2::bigint,
+    _batch_size    := $3::bigint
   )
   """
   @stream_read_last_sql "select * from get_last_message(_stream_name := $1)"
   @write_sql """
   select * from write_message(
-    _id               := $1::uuid,
-    _stream_name      := $2,
-    _type             := $3,
-    _data             := $4,
-    _metadata         := $5,
-    _expected_version := $6
+    _id               := $1::varchar,
+    _stream_name      := $2::varchar,
+    _type             := $3::varchar,
+    _data             := $4::jsonb,
+    _metadata         := $5::jsonb,
+    _expected_version := $6::bigint
   )
   """
-  @version_sql "select * from stream_version(_stream_name := $1)"
+  @version_sql "select * from stream_version(_stream_name := $1::varchar)"
 
   @impl Delugex.MessageStore
   @doc """
@@ -127,13 +127,13 @@ defmodule Delugex.MessageStore.Postgres do
   """
   def read_batch(stream_name, position \\ 0, batch_size \\ 10)
       when is_version(position) and is_batch_size(batch_size) do
-    stream_name = StreamName.to_string(stream_name)
-
     sql =
       case StreamName.category?(stream_name) do
         true -> @category_read_batch_sql
         false -> @stream_read_batch_sql
       end
+
+    stream_name = StreamName.to_string(stream_name)
 
     query(sql, [stream_name, position, batch_size]).rows
     |> rows_to_events
@@ -195,7 +195,7 @@ defmodule Delugex.MessageStore.Postgres do
          data: data,
          metadata: metadata
        }) do
-    id = cast_uuid_to_uuid(id)
+    id = cast_uuid_as_string(id)
     stream_name = StreamName.to_string(stream_name)
 
     [id, stream_name, type, data, metadata]
@@ -249,23 +249,14 @@ defmodule Delugex.MessageStore.Postgres do
     end
   end
 
-  defp cast_uuid_to_uuid(id) do
-    {:ok, uuid} =
-      id
-      |> Ecto.UUID.cast!()
-      |> Ecto.UUID.dump()
-
-    uuid
-  end
-
   defp cast_uuid_as_string(id) do
     Ecto.UUID.cast!(id)
   end
 
   defp decode_stream_name(text_stream_name) do
     decoder =
-      __MODULE__
-      |> Application.get_env(Delugex.MessageStore.Postgres)
+      :delugex
+      |> Application.get_env(__MODULE__)
       |> Keyword.fetch!(:stream_name)
       |> Keyword.fetch!(:decoder)
 
@@ -273,19 +264,36 @@ defmodule Delugex.MessageStore.Postgres do
   end
 
   defp decode_metadata(map) do
-    metadata = symbolize(map)
+    metadata =
+      map
+      |> decode_json()
+      |> symbolize()
+
     struct(Metadata, metadata)
   end
 
   defp decode_data(map) do
-    symbolize(map)
+    map
+    |> decode_json()
+    |> symbolize()
   end
 
   defp decode_naive_date_time(time) do
-    NaiveDateTime.from_iso8601!(time)
+    # NaiveDateTime.from_iso8601!(time)
+    time
   end
 
   defp decode_id(id) do
     cast_uuid_as_string(id)
+  end
+
+  defp decode_json(text) do
+    decoder =
+      :delugex
+      |> Application.get_env(__MODULE__)
+      |> Keyword.fetch!(:json)
+      |> Keyword.fetch!(:decoder)
+
+    decoder.decode!(text)
   end
 end

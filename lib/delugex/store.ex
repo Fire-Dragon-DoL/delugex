@@ -21,7 +21,7 @@ defmodule Delugex.Store do
     `Delugex.StreamName`
   """
   defmacro __using__(opts \\ []) do
-    opts = Macro.escape(opts)
+    # opts = Macro.escape(opts)
 
     quote location: :keep do
       @behaviour unquote(__MODULE__)
@@ -33,7 +33,7 @@ defmodule Delugex.Store do
         stream =
           case identifier do
             nil -> stream
-            _ -> Map.put(stream, :identifier, identifier)
+            _ -> Map.put(stream, :id, identifier)
           end
 
         unquote(__MODULE__).fetch(

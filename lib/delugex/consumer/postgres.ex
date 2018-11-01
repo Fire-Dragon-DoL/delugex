@@ -37,7 +37,9 @@ defmodule Delugex.Consumer.Postgres do
 
       use GenServer
 
-      def start_link(state, opts \\ []) do
+      def start_link(state \\ nil, opts \\ []) do
+        IO.inspect(@conf)
+        IO.inspect(@ident)
         GenServer.start_link(__MODULE__, state, opts)
       end
 
@@ -86,6 +88,7 @@ defmodule Delugex.Consumer.Postgres do
       def terminate(:normal, state), do: Consumer.unlisten(@conf, state)
       def terminate(:shutdown, state), do: Consumer.unlisten(@conf, state)
       def terminate({:shutdown, _}, state), do: Consumer.unlisten(@conf, state)
+      def terminate(_, state), do: Consumer.unlisten(@conf, state)
       defoverridable terminate: 2
     end
   end

@@ -10,7 +10,8 @@ config :logger,
 config :delugex, Delugex.MessageStore.Postgres.Repo, pool_size: 15
 
 config :delugex, Delugex.MessageStore.Postgres,
-  stream_name: [decoder: Delugex.Stream.Name]
+  stream_name: [decoder: Delugex.Stream.Name],
+  json: [decoder: Jason]
 
 import_config "./environment/#{Mix.env()}.exs"
 

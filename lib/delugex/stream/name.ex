@@ -1,4 +1,6 @@
 defmodule Delugex.Stream.Name do
+  @behaviour Delugex.StreamName.Decoder
+
   alias __MODULE__
 
   @moduledoc """
@@ -28,72 +30,47 @@ defmodule Delugex.Stream.Name do
 
   @type t :: %Name{
           category: Delugex.StreamName.category(),
-          id: Delugex.StreamName.id(),
-          types: Delugex.StreamName.types()
+          id: Delugex.StreamName.id()
         }
 
-  defstruct(category: "", id: nil, types: [])
-
-  def new(category), do: new(category, nil, [])
-  def new(category, id), do: new(category, id, [])
+  defstruct(category: "", id: nil)
 
   @spec new(
           category :: Delugex.StreamName.category(),
-          id :: Delugex.StreamName.id(),
-          types :: Delugex.StreamName.types()
+          id :: Delugex.StreamName.id()
         ) :: t()
-  def new(category, id, types)
-      when is_binary(category) and (is_nil(id) or is_binary(id)) and
-             is_list(types) do
-    %__MODULE__{category: category, id: id, types: types}
+  def new(category, id \\ nil)
+      when is_binary(category) and (is_nil(id) or is_binary(id)) do
+    %__MODULE__{category: category, id: id}
   end
 
   @doc """
   Creates a Name struct with a provided string as an arguement.
 
   ## Examples
-      iex> Name.build("campaign:command+position-123")
+      iex> Name.decode("campaign:command+position-123")
       %Name{category: "campaign",
                         id: "123",
                         types: ["command", "position"]}
   """
-  @spec build(text :: String.t()) :: Name.t()
-  def build(text) when is_bitstring(text) do
+  @impl Delugex.StreamName.Decoder
+  @spec decode(text :: String.t()) :: Name.t()
+  def decode(text) when is_binary(text) do
     category = extract_category(text)
-    {no_category, types_text, types} = extract_types(text, category)
     id = extract_id(no_category, types_text)
 
-    new(category, id, types)
+    new(category, id)
   end
 
   defp extract_category(string) do
-    String.split(string, ":")
-    |> List.first()
     |> String.split("-")
     |> List.first()
   end
 
-  defp extract_types(string, category) do
-    no_category =
-      string
-      |> String.trim_leading(category)
-      |> String.trim_leading(":")
-
-    types =
-      no_category
-      |> String.split("-")
-      |> List.first()
-
-    case types do
-      "" -> {no_category, []}
-      _ -> {no_category, types, String.split(types, "+")}
-    end
-  end
-
-  defp extract_id(string, types_text) do
+  defp extract_id(string, category) do
     id =
       string
-      |> String.trim_leading(types_text)
+      |> String.trim_leading(category)
       |> String.trim_leading("-")
 
     case id do
@@ -104,30 +81,29 @@ defmodule Delugex.Stream.Name do
 
   defimpl String.Chars do
     @spec to_string(stream_name :: Name.t()) :: String.t()
-    def to_string(%Name{
-          category: category,
-          id: id,
-          types: types
-        }) do
+    def to_string(%Name{category: category, id: id}) do
       id = id_to_string(id)
-      types = types_to_string(types)
 
-      "#{category}#{types}#{id}"
+      "#{category}#{id}"
     end
 
     defp id_to_string(nil), do: ""
     defp id_to_string(id), do: "-#{id}"
-
-    defp types_to_string([]), do: ""
-    defp types_to_string(types), do: ":#{Enum.join(types, "+")}"
   end
 
   defimpl Delugex.StreamName do
     def to_string(%Name{} = stream_name), do: Kernel.to_string(stream_name)
     def category(%Name{category: category}), do: category
     def id(%Name{id: id}), do: id
-    def types(%Name{types: types}), do: types
     def category?(%Name{id: nil}), do: true
     def category?(%Name{id: id}) when not is_nil(id), do: false
+  end
+
+  defimpl Jason.Encoder do
+    def encode(value, opts) do
+      value
+      |> Delugex.StreamName.to_string()
+      |> Jason.Encode.map(opts)
+    end
   end
 end

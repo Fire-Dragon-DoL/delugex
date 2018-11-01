@@ -5,7 +5,7 @@ defmodule Delugex.Handler.Unhandled do
     quote location: :keep do
       @impl Delugex.Handler
       def handle(event, _, _) do
-        Delugex.Logger.info(fn -> "Event #{inspect(event)} unhandled" end)
+        Delugex.Logger.warn(fn -> "Event #{inspect(event)} unhandled" end)
       end
     end
   end

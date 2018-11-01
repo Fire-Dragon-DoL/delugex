@@ -9,7 +9,7 @@ defmodule Delugex.Consumer do
   alias Delugex.Consumer.State
   alias Delugex.Logger
   alias Delugex.StreamName
-  alias Delugex.RawEvent
+  alias Delugex.Event.Raw
 
   @doc """
   Determines an identifier for the given module as a string
@@ -20,7 +20,7 @@ defmodule Delugex.Consumer do
   end
 
   @spec identifier(consumer :: String.t()) :: String.t()
-  def identifier(consumer) when is_bitstring(consumer) do
+  def identifier(consumer) when is_binary(consumer) do
     consumer
   end
 
@@ -64,20 +64,20 @@ defmodule Delugex.Consumer do
         %Config{} = config,
         pid,
         %{
-          events: [raw_event | events],
+          events: [raw | events],
           meta: meta
         } = state
       ) do
     debug(config.identifier, fn ->
-      "Consuming event #{raw_event.type}/#{raw_event.global_position}"
+      "Consuming event #{raw.type}/#{raw.global_position}"
     end)
 
     %{handler: handler, event_transformer: event_transformer} = config
 
-    handle_event(handler, event_transformer, raw_event, meta)
-    position = RawEvent.next_position(raw_event.position)
-    global_position = raw_event.global_position
-    global_position = RawEvent.next_global_position(global_position)
+    handle_event(handler, event_transformer, raw, meta)
+    position = Event.Raw.next_position(raw.position)
+    global_position = raw.global_position
+    global_position = Event.Raw.next_global_position(global_position)
 
     state =
       state
@@ -132,7 +132,7 @@ defmodule Delugex.Consumer do
     Logger.debug(fn -> "[##{identifier}] " <> msg_or_fn.() end)
   end
 
-  def debug(identifier, msg_or_fn) when is_bitstring(msg_or_fn) do
+  def debug(identifier, msg_or_fn) when is_binary(msg_or_fn) do
     Logger.debug(fn -> "[##{identifier}] " <> msg_or_fn end)
   end
 
@@ -167,9 +167,9 @@ defmodule Delugex.Consumer do
     debug(identifier, fn -> "Requesting events from #{pos_type} #{pos}" end)
   end
 
-  defp handle_event(handler, event_transformer, raw_event, meta) do
-    event = event_transformer.to_event(raw_event)
+  defp handle_event(handler, event_transformer, raw, meta) do
+    event = event_transformer.transform(raw)
 
-    handler.handle(event, raw_event, meta)
+    handler.handle(event, raw, meta)
   end
 end

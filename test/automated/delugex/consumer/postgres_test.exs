@@ -41,14 +41,14 @@ defmodule Delugex.Consumer.PostgresTest do
   end
 
   @stream_name StreamName.new("campaign", "123")
-  @raw_event_base %Delugex.RawEvent{stream_name: @stream_name}
+  @event_base %Delugex.Event.Raw{stream_name: @stream_name}
 
   describe "Consumer.Postgres" do
     test "handles renamed events" do
       _pid = start_supervised!({CampaignConsumer, self()})
 
       %Events.Renamed{}
-      |> Event.to_raw_event(@raw_event_base)
+      |> Event.to_event(@event_base)
       |> MessageStore.write!()
 
       assert_receive {:renamed}, 500
@@ -60,7 +60,7 @@ defmodule Delugex.Consumer.PostgresTest do
       _pid = start_supervised!({CampaignConsumer, self()})
 
       %Events.Spammed{}
-      |> Event.to_raw_event(@raw_event_base)
+      |> Event.to_event(@event_base)
       |> MessageStore.write!()
 
       assert_receive {:spammed}, 500

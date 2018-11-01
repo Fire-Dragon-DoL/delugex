@@ -5,7 +5,7 @@ defmodule Delugex.Consumer.State do
           listener: {:ok, Delugex.MessageStore.listen_ref()} | {:error, any},
           position: non_neg_integer(),
           global_position: non_neg_integer(),
-          events: list(Delugex.RawEvent.t()),
+          events: list(Delugex.Event.Raw.t()),
           meta: any
         }
   defstruct listener: nil,

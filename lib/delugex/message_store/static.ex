@@ -6,12 +6,12 @@ defmodule Delugex.MessageStore.Static do
 
   use Delugex.MessageStore
 
-  alias Delugex.RawEvent
-  alias Delugex.StreamName
+  alias Delugex.Event.Raw
+  alias Delugex.Stream.Name
 
-  @stream_name %StreamName{category: "campaign", identifier: "123", types: []}
+  @stream_name %Name{category: "campaign", id: "123"}
   @messages [
-    %RawEvent{
+    %Event.Raw{
       id: "123-456",
       stream_name: @stream_name,
       type: "Updated",
@@ -19,7 +19,7 @@ defmodule Delugex.MessageStore.Static do
       global_position: 0,
       data: %{name: "Foo"}
     },
-    %RawEvent{
+    %Event.Raw{
       id: "678-91011",
       stream_name: @stream_name,
       type: "Updated",
@@ -27,7 +27,7 @@ defmodule Delugex.MessageStore.Static do
       global_position: 1,
       data: %{name: "Bar"}
     },
-    %RawEvent{
+    %Event.Raw{
       id: "uuid",
       stream_name: @stream_name,
       type: "Updated",

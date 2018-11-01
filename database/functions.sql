@@ -10,12 +10,17 @@ DECLARE
 BEGIN
   stream_name = _message.stream_name;
   _category = category(stream_name);
+  positions = format(
+    '%s/%s',
+    _message.position::text,
+    _message.global_position::text
+  )::varchar;
 
   if _category != stream_name then
-    PERFORM pg_notify(stream_name::text, _message.global_position::text);
+    PERFORM pg_notify(stream_name::text, positions);
   end if;
 
-  PERFORM pg_notify(_category::text, _message.global_position::text);
+  PERFORM pg_notify(_category::text, positions);
 END;
 $$ LANGUAGE plpgsql;
 

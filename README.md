@@ -50,11 +50,11 @@ be found at [https://hexdocs.pm/delugex](https://hexdocs.pm/delugex).
 
 - [Entity](#entity) a behaviour that should be implemented by entity modules,
   ensuring those can be initialized without any argument
-- [RawEvent](#rawevent) database representation of a _message_ in the
+- [Event.Raw](#rawevent) database representation of a _message_ in the
   _messages_ table
-  - [RawEvent.Metadata](#raweventmetadata) represent a set of useful metadata
+  - [Event.Metadata](#raweventmetadata) represent a set of useful metadata
     attributes that can be stored in a message
-- [Event](#event) helpers to create a [RawEvent](#rawevent) from a custom
+- [Event](#event) helpers to create a [Event.Raw](#rawevent) from a custom
   struct
 
 ## Usage
@@ -66,20 +66,20 @@ examples:
 
 ```elixir
 stream_name = Delugex.StreamName.new("person", "123")
-raw_event = %Delugex.RawEvent{
+raw = %Delugex.Event.Raw{
   type: "Created",
   data: %{name: "Some Name"}
   stream_name: stream_name
 }
 
 # Assuming the stream is empty
-MessageStore.write!(raw_event) # => 0
+MessageStore.write!(raw) # => 0
 
 # Assuming the stream has only 1 message
-MessageStore.write!(raw_event, 0) # => 1
+MessageStore.write!(raw, 0) # => 1
 
 # Assuming the stream has 2 messages, so "version" is 1
-MessageStore.write!(raw_event, 2) # => raises ExpectedVersionError
+MessageStore.write!(raw, 2) # => raises ExpectedVersionError
 ```
 
 ### `EventTransformer`
@@ -96,19 +96,19 @@ defmodule Person.Events do
 end
 
 stream_name = Delugex.StreamName.new("person", "123")
-raw_event = %Delugex.RawEvent{
+raw = %Delugex.Event.Raw{
   type: "Created",
   data: %{name: "Some Name"}
   stream_name: stream_name
 }
 
-Person.Events.to_event(raw_event) # => %Created{name: "Some Name"}
+Person.Events.transform(raw) # => %Created{name: "Some Name"}
 
-raw_event = Map.put(raw_event, :type, "Renamed")
-Person.Events.to_event(raw_event) # => %Delugex.Event.Unknown{...}
+raw = Map.put(raw, :type, "Renamed")
+Person.Events.transform(raw) # => %Delugex.Event.Unknown{...}
 ```
 
-You can customize the function `to_event` however you want.
+You can customize the function `transform` however you want.
 
 ### `Projection`
 
@@ -187,10 +187,10 @@ stream_name = Delugex.StreamName.from_string("person-123")
 
 alias Delugex.MessageStore.Postgres, as: MessageStore
 
-raw_event = Event.to_raw_event(created, stream_name)
-MessageStore.write!(raw_event)
-raw_event = Event.to_raw_event(createdAgain, stream_name)
-MessageStore.write!(raw_event)
+raw = Event.to_event(created, stream_name)
+MessageStore.write!(raw)
+raw = Event.to_event(createdAgain, stream_name)
+MessageStore.write!(raw)
 
 {person, version} = Person.Store.fetch("123")
 version # => 1
@@ -234,8 +234,8 @@ stream_name = Delugex.StreamName.from_string("person-123")
 
 alias Delugex.MessageStore.Postgres, as: MessageStore
 
-raw_event = Event.to_raw_event(created, stream_name)
-MessageStore.write!(raw_event)
+raw = Event.to_event(created, stream_name)
+MessageStore.write!(raw)
 
 # When the consumer receives the message, it will print:
 # A person was created! Hello jerry

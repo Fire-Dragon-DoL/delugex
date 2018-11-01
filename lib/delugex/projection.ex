@@ -32,14 +32,13 @@ defmodule Delugex.Projection do
   The returned value is `%User{email: "test@example.com"}`
   """
 
-  alias Delugex.Entity
   alias Delugex.Logger
 
-  @callback apply(entity :: Entity.t(), event :: struct) :: Entity.t()
+  @callback apply(entity :: any(), event :: any()) :: any()
   @callback apply_all(
-              entity :: Entity.t(),
-              events :: list(struct)
-            ) :: Entity.t()
+              entity :: any(),
+              events :: Enumerable.t()
+            ) :: any()
 
   defmacro __using__(_) do
     quote location: :keep do
@@ -60,14 +59,14 @@ defmodule Delugex.Projection do
   It also logs (debug) info whenever an event is applied
   """
   @spec apply_all(
-          current_entity :: Entity.t(),
+          current_entity :: any(),
           projection :: module,
           events :: Enumerable.t()
-        ) :: Entity.t()
+        ) :: any()
   def apply_all(current_entity, projection, events \\ []) do
     Enum.reduce(events, current_entity, fn event, entity ->
       Logger.debug(fn ->
-        "Applying #{event.__struct__} to #{entity.__struct__}"
+        "Applying #{event.__struct__}"
       end)
 
       projection.apply(entity, event)

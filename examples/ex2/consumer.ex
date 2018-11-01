@@ -6,8 +6,8 @@ defmodule Ex2.Consumer do
     Delugex.Consumer.listen(__MODULE__)
   end
 
-  def handle_cast(:event_received, raw_event) do
-    event = Ex2.Task.Events.transform(raw_event.type, raw_event)
+  def handle_cast(:event_received, raw) do
+    event = Ex2.Task.Events.transform(raw.type, raw)
     handle(event)
   end
 

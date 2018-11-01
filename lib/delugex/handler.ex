@@ -6,9 +6,9 @@ defmodule Delugex.Handler do
   """
 
   @callback handle(
-              event :: struct,
-              raw_event :: Delugex.RawEvent.t(),
-              meta :: any
+              event :: any(),
+              raw :: Delugex.Event.Raw.t(),
+              meta :: any()
             ) :: no_return()
 
   defmacro __using__(_) do

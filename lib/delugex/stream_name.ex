@@ -26,7 +26,7 @@ defprotocol Delugex.StreamName do
 
   @type category :: String.t()
   @type id :: String.t() | nil
-  @type types :: [String.t()]
+  @type t :: any()
 
   @doc "Converts a StreamName into a string to be supplied to the database"
   @spec to_string(stream_name) :: String.t()
@@ -39,10 +39,6 @@ defprotocol Delugex.StreamName do
   @doc "Extracts id from a StreamName"
   @spec id(stream_name) :: id()
   def id(stream_name)
-
-  @doc "Extracts types from a StreamName"
-  @spec types(stream_name) :: types()
-  def types(stream_name)
 
   @doc "true if the stream_name has nil id"
   @spec category?(stream_name) :: boolean()

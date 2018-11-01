@@ -2,12 +2,12 @@ defmodule Delugex.MessageStoreTest do
   use ExUnit.Case, async: true
 
   alias Delugex.MessageStore.Static, as: MessageStore
-  alias Delugex.RawEvent
+  alias Delugex.Event.Raw
   alias Delugex.StreamName
 
   @stream_name %StreamName{category: "campaign", identifier: "123", types: []}
   @empty_stream %StreamName{category: "empty", identifier: nil, types: []}
-  @raw_event %RawEvent{
+  @raw %Event.Raw{
     id: "11111111",
     stream_name: @stream_name,
     type: "Updated",
@@ -16,49 +16,49 @@ defmodule Delugex.MessageStoreTest do
 
   describe "MessageStore.write_initial!" do
     test "doesn't raises on first message" do
-      MessageStore.write_initial!(@raw_event)
+      MessageStore.write_initial!(@raw)
     end
   end
 
   describe "MessageStore.write!" do
     test "returns 3" do
-      version = MessageStore.write!(@raw_event)
+      version = MessageStore.write!(@raw)
 
       assert version == 3
     end
   end
 
   describe "MessageStore.read_last" do
-    test "returns %RawEvent when stream has events" do
-      raw_event = MessageStore.read_last(@stream_name)
+    test "returns %Event.Raw when stream has events" do
+      raw = MessageStore.read_last(@stream_name)
 
-      assert raw_event.position == 2 && raw_event.id == "uuid"
+      assert raw.position == 2 && raw.id == "uuid"
     end
 
     test "returns nil when stream is empty" do
-      raw_event = MessageStore.read_last(@empty_stream)
+      raw = MessageStore.read_last(@empty_stream)
 
-      assert raw_event == nil
+      assert raw == nil
     end
   end
 
   describe "MessageStore.read_batch" do
-    test "returns list of %RawEvent when stream has events" do
-      raw_events = MessageStore.read_batch(@stream_name)
+    test "returns list of %Event.Raw when stream has events" do
+      raws = MessageStore.read_batch(@stream_name)
 
-      assert length(raw_events) == 3
+      assert length(raws) == 3
     end
 
     test "returns [] when reading after last event" do
-      raw_events = MessageStore.read_batch(@stream_name, 3)
+      raws = MessageStore.read_batch(@stream_name, 3)
 
-      assert raw_events == []
+      assert raws == []
     end
 
-    test "returns list of %RawEvent with max size of batch_size" do
-      raw_events = MessageStore.read_batch(@stream_name, 0, 2)
+    test "returns list of %Event.Raw with max size of batch_size" do
+      raws = MessageStore.read_batch(@stream_name, 0, 2)
 
-      assert length(raw_events) == 2
+      assert length(raws) == 2
     end
   end
 
@@ -78,15 +78,15 @@ defmodule Delugex.MessageStoreTest do
 
   describe "MessageStore.stream" do
     test "streams raw events as read from batch" do
-      raw_events = MessageStore.stream(@stream_name) |> Enum.to_list()
+      raws = MessageStore.stream(@stream_name) |> Enum.to_list()
 
-      assert length(raw_events) == 3
+      assert length(raws) == 3
     end
 
     test "streams raw events as read from batch even in different chunks" do
-      raw_events = MessageStore.stream(@stream_name, 1, 1) |> Enum.to_list()
+      raws = MessageStore.stream(@stream_name, 1, 1) |> Enum.to_list()
 
-      assert length(raw_events) == 2
+      assert length(raws) == 2
     end
   end
 end

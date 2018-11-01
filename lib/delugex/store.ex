@@ -9,12 +9,11 @@ defmodule Delugex.Store do
   @callback fetch(
               identifier :: Delugex.StreamName.id(),
               opts :: fetch_opts
-            ) :: {struct(), Delugex.MessageStore.version() | nil}
+            ) :: {struct(), Delugex.MessageStore.optional_version()}
 
   @doc """
   - `:message_store` **required** `Delugex.MessageStore` implementation, used to read
     events
-  - `:entity_builder` **required** module implementing `Delugex.Entity` behaviour
   - `:event_transformer` **required** implementation of
     `Delugex.EventTransformer`
   - `:projection` **required** implementation of `Delugex.Store`
@@ -23,17 +22,17 @@ defmodule Delugex.Store do
   """
   defmacro __using__(opts \\ []) do
     message_store = Keyword.get(opts, :message_store)
-    entity_builder = Keyword.get(opts, :entity_builder)
     event_transformer = Keyword.get(opts, :event_transformer)
     projection = Keyword.get(opts, :projection)
     stream_name = Keyword.get(opts, :stream_name)
+    opts = Macro.escape(opts)
 
     quote location: :keep do
       @behaviour unquote(__MODULE__)
 
       @impl unquote(__MODULE__)
       def fetch(identifier \\ nil, opts \\ []) do
-        stream = unquote(stream_name)
+        stream = unquote(opts)[:stream_name]
 
         stream =
           case identifier do
@@ -42,10 +41,9 @@ defmodule Delugex.Store do
           end
 
         unquote(__MODULE__).fetch(
-          unquote(message_store),
-          unquote(entity_builder),
-          unquote(event_transformer),
-          unquote(projection),
+          unquote(opts)[:message_store],
+          unquote(opts)[:event_transformer],
+          unquote(opts)[:projection],
           stream,
           opts
         )
@@ -55,30 +53,27 @@ defmodule Delugex.Store do
 
   @spec fetch(
           message_store :: module,
-          entity_builder :: module,
           event_transformer :: module,
           projection :: module,
           stream_name :: Delugex.StreamName.t(),
           opts :: fetch_opts()
-        ) :: {struct(), Delugex.MessageStore.version() | nil}
+        ) :: {struct(), Delugex.MessageStore.optional_version()}
   def fetch(
         message_store,
-        entity_builder,
         event_transformer,
         projection,
         %Delugex.StreamName{} = stream_name,
         opts \\ []
       )
-      when is_atom(message_store) and is_atom(entity_builder) and
-             is_atom(event_transformer) and is_atom(projection) do
-    new_ent = entity_builder.new()
+      when is_atom(message_store) and is_atom(event_transformer) and
+             is_atom(projection) do
     batch_size = Keyword.get(opts, :batch_size, 10)
 
     message_store.stream(stream_name, 0, batch_size)
     |> Stream.map(event_and_position(event_transformer))
-    |> Enum.reduce({new_ent, nil}, fn {event, position}, {entity, _} ->
+    |> Enum.reduce({nil, nil}, fn {event, position}, {entity, _} ->
       Logger.debug(fn ->
-        "Applying #{event.__struct__} to #{entity.__struct__} [##{position}]"
+        "Applying #{event.__struct__} [##{position}]"
       end)
 
       entity = projection.apply(entity, event)
@@ -91,8 +86,8 @@ defmodule Delugex.Store do
   defp maybe_mark_empty({_, _} = result), do: result
 
   defp event_and_position(event_transformer) do
-    fn raw_event ->
-      {event_transformer.to_event(raw_event), raw_event.position}
+    fn raw ->
+      {event_transformer.transform(raw), raw.position}
     end
   end
 end

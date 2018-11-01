@@ -7,13 +7,10 @@ config :logger,
   utc_log: true,
   compile_time_purge_level: :debug
 
-config :ecto, json_library: Jason
+config :delugex, Delugex.MessageStore.Postgres.Repo, pool_size: 15
 
-config :delugex, Delugex.MessageStore.Postgres.Repo,
-  adapter: Ecto.Adapters.Postgres,
-  pool_size: 15
-
-config :delugex, Delugex.StreamName, adapter: Delugex.Stream.Name
+config :delugex, Delugex.MessageStore.Postgres,
+  stream_name: [decoder: Delugex.Stream.Name]
 
 import_config "./environment/#{Mix.env()}.exs"
 

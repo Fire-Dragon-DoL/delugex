@@ -2,16 +2,16 @@ defmodule Delugex.MessageStore.PostgresTest do
   use ExUnit.Case, async: true
   alias Delugex.MessageStore.Postgres
   alias Delugex.StreamName
-  alias Delugex.RawEvent
+  alias Delugex.Event.Raw
 
   @stream_name %StreamName{category: "campaign", identifier: "123", types: []}
-  @raw_event %RawEvent{
+  @raw %Event.Raw{
     id: UUID.uuid4(),
     stream_name: @stream_name,
     type: "Updated",
     data: %{name: "Unnamed"}
   }
-  @raw_event2 %RawEvent{
+  @raw2 %Event.Raw{
     id: UUID.uuid4(),
     stream_name: @stream_name,
     type: "Updated",
@@ -23,24 +23,24 @@ defmodule Delugex.MessageStore.PostgresTest do
   end
 
   describe "Postgres.write!" do
-    test "writes raw_event and returns version" do
-      version = Postgres.write!(@raw_event)
+    test "writes raw and returns version" do
+      version = Postgres.write!(@raw)
 
       assert version == 0
     end
 
     test "raises when expected version differs from actual" do
       assert_raise Delugex.MessageStore.ExpectedVersionError, fn ->
-        Postgres.write!(@raw_event, 30)
+        Postgres.write!(@raw, 30)
       end
     end
   end
 
   describe "Postgres.write_batch!" do
-    test "writes raw_events and returns version" do
+    test "writes raws and returns version" do
       version =
         Postgres.write_batch!(
-          [@raw_event, @raw_event2],
+          [@raw, @raw2],
           @stream_name,
           :no_stream
         )
@@ -56,15 +56,15 @@ defmodule Delugex.MessageStore.PostgresTest do
 
     test "raises when expected version differs from actual" do
       assert_raise Delugex.MessageStore.ExpectedVersionError, fn ->
-        Postgres.write_batch!([@raw_event, @raw_event2], @stream_name, 30)
+        Postgres.write_batch!([@raw, @raw2], @stream_name, 30)
       end
     end
   end
 
   describe "Postgres.read_last" do
     test "reads last event" do
-      Postgres.write!(@raw_event)
-      Postgres.write!(@raw_event2)
+      Postgres.write!(@raw)
+      Postgres.write!(@raw2)
       event = Postgres.read_last(@stream_name)
       data = event.data
 
@@ -80,8 +80,8 @@ defmodule Delugex.MessageStore.PostgresTest do
 
   describe "Postgres.read_batch" do
     test "reads events in order" do
-      Postgres.write!(@raw_event)
-      Postgres.write!(@raw_event2)
+      Postgres.write!(@raw)
+      Postgres.write!(@raw2)
       events = Postgres.read_batch(@stream_name)
       data = List.last(events).data
 
@@ -89,8 +89,8 @@ defmodule Delugex.MessageStore.PostgresTest do
     end
 
     test "reads a list of events" do
-      Postgres.write!(@raw_event)
-      Postgres.write!(@raw_event2)
+      Postgres.write!(@raw)
+      Postgres.write!(@raw2)
       events = Postgres.read_batch(@stream_name)
 
       assert length(events) == 2

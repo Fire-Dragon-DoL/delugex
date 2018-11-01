@@ -7,34 +7,37 @@ defmodule Delugex.MessageStore do
 
   @type listen_ref :: any
   @type listen_opts :: list()
-  @type expected_version :: non_neg_integer | :no_stream | nil
   @type batch_size :: non_neg_integer
   @type version :: non_neg_integer
+  @type optional_version :: version() | nil
+  @type expected_version :: optional_version() | :no_stream
+  @type stream_version :: version() | :no_stream
 
   alias Delugex.MessageStore.Stream.Position
 
   # Raises `Delugex.MessageStore.ExpectedVersionError` in case of version violation
   @callback write!(
-              raw_event :: Delugex.RawEvent.t(),
+              event :: Delugex.Event.t(),
               expected_version :: expected_version()
             ) :: version()
   # Raises `Delugex.MessageStore.ExpectedVersionError` in case of version violation
-  @callback write_initial!(raw_event :: Delugex.RawEvent.t()) :: no_return()
+  @callback write_initial!(event :: Delugex.Event.t()) :: no_return()
   # Raises `Delugex.MessageStore.ExpectedVersionError` in case of version violation
+  # nil is returned if events is an empty list
   @callback write_batch!(
-              raw_events :: list(Delugex.RawEvent.t()),
+              events :: list(Delugex.Event.t()),
               stream_name :: Delugex.StreamName.t(),
               expected_version :: expected_version()
-            ) :: version()
+            ) :: optional_version()
   @callback read_last(stream_name :: Delugex.StreamName.t()) ::
-              Delugex.RawEvent.t() | nil
+              Delugex.Event.Raw.t() | nil
   @callback read_batch(
               stream_name :: Delugex.StreamName.t(),
               position :: version(),
               batch_size :: batch_size()
-            ) :: list(Delugex.RawEvent.t())
+            ) :: list(Delugex.Event.Raw.t())
   @callback read_version(stream_name :: Delugex.StreamName.t()) ::
-              version() | nil
+              stream_version()
   @callback stream(
               stream_name :: Delugex.StreamName.t(),
               position :: version(),
@@ -51,20 +54,20 @@ defmodule Delugex.MessageStore do
 
   defguard is_version(version) when is_integer(version) and version >= 0
 
+  defguard is_optional_version(version)
+           when is_nil(version) or is_version(version)
+
   defguard is_expected_version(version)
-           when version == :no_stream or is_nil(version) or is_version(version)
+           when version == :no_stream or is_optional_version(version)
 
-  defguard is_batch_size(size) when is_integer(size) and size >= 0
-
-  def to_expected_version(nil), do: :no_stream
-  def to_expected_version(version) when is_version(version), do: version
+  defguard is_batch_size(size) when is_integer(size) and size >= 1
 
   @spec write_initial!(
           message_store :: module,
-          raw_event :: Delugex.RawEvent.t()
+          event :: Delugex.Event.t()
         ) :: no_return()
-  def write_initial!(message_store, raw_event) do
-    message_store.write!(raw_event, :no_stream)
+  def write_initial!(message_store, event) do
+    message_store.write!(event, :no_stream)
   end
 
   @spec stream(
@@ -89,13 +92,13 @@ defmodule Delugex.MessageStore do
       @behaviour unquote(__MODULE__)
 
       @impl unquote(__MODULE__)
-      def write_initial!(raw_event) do
-        Delugex.MessageStore.write_initial!(__MODULE__, raw_event)
+      def write_initial!(event) do
+        unquote(__MODULE__).write_initial!(__MODULE__, event)
       end
 
       @impl unquote(__MODULE__)
       def stream(stream_name, position \\ 0, batch_size \\ 10) do
-        Delugex.MessageStore.stream(
+        unquote(__MODULE__).stream(
           __MODULE__,
           stream_name,
           position,

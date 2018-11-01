@@ -34,7 +34,7 @@
   - @callback apply
   - use macro (creates an `apply` catch-all, adds @behavior Delugex.Projection)
   - apply_all(projection module with @behavior, entity, event list)
-- Delugex.RawEvent
+- Delugex.Event.Raw
   - defstruct [:id, :stream_name, :type, :position, :global_position, :data,
     :metadata, :time]
 - Delugex.Event.RawMetadata

@@ -18,8 +18,8 @@ defmodule Delugex.EventTransformerTest do
       events_module: Delugex.EventTransformerTest.Events
   end
 
-  defp raw_event(type) do
-    %Delugex.RawEvent{
+  defp raw(type) do
+    %Delugex.Event.Raw{
       id: 123_456,
       stream_name: "user-999",
       type: type,
@@ -36,7 +36,7 @@ defmodule Delugex.EventTransformerTest do
   end
 
   defp created_event do
-    raw_ev = raw_event("Created")
+    raw_ev = raw("Created")
 
     %Events.Created{
       user_id: raw_ev.data.user_id,
@@ -47,31 +47,31 @@ defmodule Delugex.EventTransformerTest do
   end
 
   def unknown_event do
-    raw_ev = raw_event("foo")
-    %Delugex.Event.Unknown{raw_event: raw_ev}
+    raw_ev = raw("foo")
+    %Delugex.Event.Unknown{raw: raw_ev}
   end
 
-  describe "EventTransformer.to_event" do
-    test "transforms RawEvent into a user defined event (Created)" do
-      raw_ev = raw_event("Created")
+  describe "EventTransformer.transform" do
+    test "transforms Event.Raw into a user defined event (Created)" do
+      raw_ev = raw("Created")
       created_ev = created_event()
-      event = Events.to_event(raw_ev)
+      event = Events.transform(raw_ev)
 
       assert event == created_ev
     end
 
-    test "transforms RawEvent into an Event.Unknown when type is unknown" do
-      raw_ev = raw_event("foo")
+    test "transforms Event.Raw into an Event.Unknown when type is unknown" do
+      raw_ev = raw("foo")
       unknown_ev = unknown_event()
-      event = Events.to_event(raw_ev)
+      event = Events.transform(raw_ev)
 
       assert event == unknown_ev
     end
 
-    test "transforms RawEvent into a user event using external module" do
-      raw_ev = raw_event("Created")
+    test "transforms Event.Raw into a user event using external module" do
+      raw_ev = raw("Created")
       created_ev = created_event()
-      event = Transformer.to_event(raw_ev)
+      event = Transformer.transform(raw_ev)
 
       assert event == created_ev
     end

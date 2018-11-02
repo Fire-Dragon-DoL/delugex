@@ -255,9 +255,8 @@ defmodule Delugex.MessageStore.Postgres do
 
   defp decode_stream_name(text_stream_name) do
     decoder =
-      :delugex
-      |> Application.get_env(__MODULE__)
-      |> Keyword.get(:stream_name, [])
+      __MODULE__
+      |> Delugex.Config.get(:stream_name, [])
       |> Keyword.get(:decoder, Delugex.Stream.Name)
 
     decoder.decode(text_stream_name)
@@ -289,9 +288,8 @@ defmodule Delugex.MessageStore.Postgres do
 
   defp decode_json(text) do
     decoder =
-      :delugex
-      |> Application.get_env(__MODULE__)
-      |> Keyword.get(:json, [])
+      __MODULE__
+      |> Delugex.Config.get(:json, [])
       |> Keyword.get(:decoder, Jason)
 
     decoder.decode!(text)

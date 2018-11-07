@@ -10,6 +10,7 @@ defmodule Delugex.MixProject do
       elixir: "~> 1.7",
       elixirc_paths: elixirc_paths(Mix.env()),
       deps: deps(),
+      test_paths: ["test/automated"],
       dialyzer: [
         plt_add_apps: [:mnesia],
         flags: [
@@ -41,6 +42,6 @@ defmodule Delugex.MixProject do
     ]
   end
 
-  defp elixirc_paths(:test), do: ["lib"]
+  defp elixirc_paths(:test), do: ["lib", "test/automated/support"]
   defp elixirc_paths(_), do: ["lib"]
 end

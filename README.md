@@ -2,6 +2,9 @@
 
 ## TODO
 
+- Non auto start of postgres messagestore
+- Autostart messagestore postgres for manual tests?
+- DynamicSupervisor for messagestore postgres
 - Database script for Listen on triggers
 - DynamicSupervisor to load listen config from repo config dinamically
 

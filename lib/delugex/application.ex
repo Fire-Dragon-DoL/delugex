@@ -5,15 +5,15 @@ defmodule Delugex.Application do
     repo = Delugex.MessageStore.Postgres.Repo
 
     children = [
-      repo,
-      %{
-        id: Postgrex.Notifications,
-        start: {
-          Postgrex.Notifications,
-          :start_link,
-          [repo.config() ++ [name: Postgrex.Notifications]]
-        }
-      }
+      repo
+      # %{
+      #   id: Postgrex.Notifications,
+      #   start: {
+      #     Postgrex.Notifications,
+      #     :start_link,
+      #     [repo.config() ++ [name: Postgrex.Notifications]]
+      #   }
+      # }
     ]
 
     Supervisor.start_link(

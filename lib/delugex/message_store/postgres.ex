@@ -9,6 +9,7 @@ defmodule Delugex.MessageStore.Postgres do
   """
 
   use Delugex.MessageStore
+  use DynamicSupervisor
 
   import Delugex.MessageStore,
     only: [
@@ -51,6 +52,15 @@ defmodule Delugex.MessageStore.Postgres do
   )
   """
   @version_sql "select * from stream_version(_stream_name := $1::varchar)"
+
+  def start_link(arg) do
+    DynamicSupervisor.start_link(__MODULE__, arg, name: __MODULE__)
+  end
+
+  @impl DynamicSupervisor
+  def init(_arg) do
+    DynamicSupervisor.init(strategy: :one_for_one)
+  end
 
   @impl Delugex.MessageStore
   @doc """

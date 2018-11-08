@@ -8,8 +8,8 @@ defmodule Delugex.MessageStore.Postgres do
   make sure to convert it to string.
   """
 
+  use Supervisor
   use Delugex.MessageStore
-  use DynamicSupervisor
 
   import Delugex.MessageStore,
     only: [
@@ -53,13 +53,29 @@ defmodule Delugex.MessageStore.Postgres do
   """
   @version_sql "select * from stream_version(_stream_name := $1::varchar)"
 
-  def start_link(arg) do
-    DynamicSupervisor.start_link(__MODULE__, arg, name: __MODULE__)
+  def start_link(_arg) do
+    Supervisor.start_link(__MODULE__, nil, name: __MODULE__)
   end
 
-  @impl DynamicSupervisor
+  @impl Supervisor
   def init(_arg) do
-    DynamicSupervisor.init(strategy: :one_for_one)
+    notify_config =
+      Delugex.MessageStore.Postgres.Repo.config()
+      |> Keyword.put(:name, Postgrex.Notifications)
+
+    children = [
+      Delugex.MessageStore.Postgres.Repo,
+      %{
+        id: Postgrex.Notifications,
+        start: {
+          Postgrex.Notifications,
+          :start_link,
+          [notify_config]
+        }
+      }
+    ]
+
+    Supervisor.init(children, strategy: :rest_for_one)
   end
 
   @impl Delugex.MessageStore

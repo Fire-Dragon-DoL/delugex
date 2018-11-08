@@ -15,6 +15,14 @@ defmodule Delugex.MessageStore.Postgres.Repo do
   @timeout 5000
   @interval 10_000
 
+  @doc """
+  Dynamically loads the repository url from the
+  DELUGEX_DATABASE_URL environment variable.
+  """
+  def init(_, opts) do
+    {:ok, Keyword.put(opts, :url, System.get_env("DELUGEX_DATABASE_URL"))}
+  end
+
   def listen(stream_name, opts \\ []) do
     {timeout, interval} = default_opts(opts)
 

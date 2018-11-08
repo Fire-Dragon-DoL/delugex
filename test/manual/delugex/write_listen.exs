@@ -65,6 +65,8 @@ end
 
 defmodule ManualTest do
   def run do
+    Delugex.MessageStore.Postgres.start_link()
+
     case User.Store.fetch("123") do
       {_, nil} ->
         %User.Events.Created{name: "Francesco"}

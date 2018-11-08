@@ -2,9 +2,7 @@ defmodule Delugex.Application do
   use Application
 
   def start(_type, _args) do
-    children = [
-      Delugex.MessageStore.Postgres
-    ]
+    children = []
 
     Supervisor.start_link(
       children,

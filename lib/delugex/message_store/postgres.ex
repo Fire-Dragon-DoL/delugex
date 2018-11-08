@@ -53,9 +53,11 @@ defmodule Delugex.MessageStore.Postgres do
   """
   @version_sql "select * from stream_version(_stream_name := $1::varchar)"
 
-  def start_link(_arg) do
+  def start_link do
     Supervisor.start_link(__MODULE__, nil, name: __MODULE__)
   end
+
+  def start_link(_arg), do: start_link()
 
   @impl Supervisor
   def init(_arg) do

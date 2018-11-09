@@ -1,24 +1,25 @@
 defmodule Delugex.MessageStore.PostgresTest do
-  use ExUnit.Case, async: true
+  use Delugex.Case, async: false
   alias Delugex.MessageStore.Postgres
-  alias Delugex.StreamName
-  alias Delugex.Event.Raw
+  alias Delugex.Stream.Name
+  alias Delugex.Event
 
-  @stream_name %StreamName{category: "campaign", identifier: "123", types: []}
-  @raw %Event.Raw{
-    id: UUID.uuid4(),
+  @stream_name %Name{category: "campaign", id: "123"}
+  @raw %Event{
+    id: Ecto.UUID.generate(),
     stream_name: @stream_name,
     type: "Updated",
     data: %{name: "Unnamed"}
   }
-  @raw2 %Event.Raw{
-    id: UUID.uuid4(),
+  @raw2 %Event{
+    id: Ecto.UUID.generate(),
     stream_name: @stream_name,
     type: "Updated",
     data: %{name: "Jerry"}
   }
 
   setup do
+    start_supervised(Delugex.MessageStore.Postgres)
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Delugex.MessageStore.Postgres.Repo)
   end
 
@@ -46,12 +47,6 @@ defmodule Delugex.MessageStore.PostgresTest do
         )
 
       assert version == 1
-    end
-
-    test "raises when nothing supplied" do
-      assert_raise Delugex.MessageStore.EmptyBatchError, fn ->
-        Postgres.write_batch!([], @stream_name)
-      end
     end
 
     test "raises when expected version differs from actual" do

@@ -71,14 +71,17 @@ defmodule Delugex.Stream.Name do
   defp extract_id(string, category) do
     id =
       string
-      |> String.trim_leading(category)
-      |> String.trim_leading("-")
+      |> trim_prefix(category)
+      |> trim_prefix("-")
 
     case id do
       "" -> nil
       _ -> id
     end
   end
+
+  defp trim_prefix(string, ""), do: string
+  defp trim_prefix(string, match), do: String.replace_prefix(string, match, "")
 
   defimpl String.Chars do
     @spec to_string(stream_name :: Name.t()) :: String.t()

@@ -22,7 +22,6 @@ defmodule Delugex.EventTransformer do
     opts =
       opts
       |> Keyword.put_new(:events_module, __CALLER__.module)
-      |> Macro.escape()
 
     quote location: :keep do
       @behaviour unquote(__MODULE__)

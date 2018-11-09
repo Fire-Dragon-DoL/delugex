@@ -125,16 +125,19 @@ defmodule Delugex.MessageStore.Postgres do
       |> Stream.with_index()
       |> Stream.map(fn {event, index} ->
         case index do
-          0 -> {event, to_number_version(expected_version)}
+          0 -> {event, expected_version}
           _ -> {event, nil}
         end
       end)
 
-    Repo.transaction(fn ->
-      Enum.reduce(insertables, nil, fn {event, expected_version} ->
-        write!(event, expected_version)
+    {:ok, final_version} =
+      Repo.transaction(fn ->
+        Enum.reduce(insertables, nil, fn {event, expected_version}, _ ->
+          write!(event, expected_version)
+        end)
       end)
-    end)
+
+    final_version
   end
 
   @impl Delugex.MessageStore

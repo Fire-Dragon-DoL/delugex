@@ -1,33 +1,21 @@
-defmodule Delugex.MessageStore.Postgres.Repo do
+defmodule Delugex.MessageStore.Mnesia.Repo.Notifications do
   defmodule ListenRef do
     @moduledoc false
 
-    @enforce_keys [:listen_ref, :timer_ref]
-    defstruct [:listen_ref, :timer_ref]
+    @enforce_keys [:stream_name, :listen_ref, :timer_ref]
+    defstruct [:stream_name, :listen_ref, :timer_ref]
   end
 
-  use Ecto.Repo,
-    otp_app: :delugex,
-    adapter: Ecto.Adapters.Postgres
+  alias :mnesia, as: Mnesia
 
-  alias Postgrex.Notifications, as: PG
-
-  @timeout 5000
   @interval 10_000
 
-  @doc """
-  Dynamically loads the repository url from the
-  DELUGEX_DATABASE_URL environment variable.
-  """
-  def init(_, opts) do
-    {:ok, Keyword.put(opts, :url, System.get_env("DELUGEX_DATABASE_URL"))}
-  end
-
   def listen(stream_name, opts \\ []) do
-    {timeout, interval} = default_opts(opts)
+    {interval} = default_opts(opts)
 
     %{
-      listen: pg_listen(stream_name, timeout),
+      stream_name: stream_name,
+      listen: mnesia_listen(),
       timer: timer_listen(interval)
     }
     |> unlisten_if_errored
@@ -35,25 +23,23 @@ defmodule Delugex.MessageStore.Postgres.Repo do
   end
 
   def unlisten(
-        %ListenRef{listen_ref: listen_ref, timer_ref: timer_ref},
-        opts \\ []
+        %ListenRef{listen_ref: _listen_ref, timer_ref: timer_ref},
+        _opts \\ []
       ) do
-    {timeout, _} = default_opts(opts)
-
     {
-      pg_unlisten(listen_ref, timeout),
+      mnesia_unlisten(),
       timer_unlisten(timer_ref)
     }
   end
 
-  defp pg_listen(stream_name, timeout) do
-    result = PG.listen(PG, stream_name, timeout: timeout)
-    Delugex.Logger.debug(fn -> "Postgrex.listen #{inspect(self())}" end)
+  defp mnesia_listen do
+    result = Mnesia.subscribe({:table, Message, :simple})
+    Delugex.Logger.debug(fn -> "Mnesia.subscribe #{inspect(self())}" end)
     result
   end
 
-  defp pg_unlisten(ref, timeout) do
-    PG.unlisten(PG, ref, timeout: timeout)
+  defp mnesia_unlisten do
+    Mnesia.unsubscribe({:table, Message, :simple})
   end
 
   defp timer_listen(interval) do
@@ -71,7 +57,7 @@ defmodule Delugex.MessageStore.Postgres.Repo do
   defp unlisten_if_errored(%{listen: listener, timer: timer}) do
     listener =
       case listener do
-        {:ok, ref} -> pg_unlisten(ref, timeout: @timeout)
+        {:ok, _ref} -> mnesia_unlisten()
         _ -> listener
       end
 
@@ -85,10 +71,16 @@ defmodule Delugex.MessageStore.Postgres.Repo do
   end
 
   defp to_result(%{
+         stream_name: stream_name,
          listen: {:ok, listener},
          timer: {:ok, timer}
        }) do
-    {:ok, %ListenRef{listen_ref: listener, timer_ref: timer}}
+    {:ok,
+     %ListenRef{
+       stream_name: stream_name,
+       listen_ref: listener,
+       timer_ref: timer
+     }}
   end
 
   defp to_result(%{listen: listener, timer: timer}) do
@@ -97,7 +89,6 @@ defmodule Delugex.MessageStore.Postgres.Repo do
 
   defp default_opts(opts) do
     {
-      Keyword.get(opts, :timeout, @timeout),
       Keyword.get(opts, :interval, @interval)
     }
   end

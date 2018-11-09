@@ -1,11 +1,11 @@
 defmodule Delugex.HandlerTest do
-  use ExUnit.Case, async: true
+  use Delugex.Case
 
   alias Delugex.Event.Raw
-  alias Delugex.StreamName
+  alias Delugex.Stream.Name
 
-  @stream_name %StreamName{category: "campaign", identifier: "123", types: []}
-  @raw %Event.Raw{
+  @stream_name %Name{category: "campaign", id: "123"}
+  @raw %Raw{
     id: "11111111",
     stream_name: @stream_name,
     type: "Updated",

@@ -1,5 +1,5 @@
 defmodule Delugex.EventTransformerTest do
-  use ExUnit.Case, async: true
+  use Delugex.Case
 
   defmodule Events do
     use Delugex.EventTransformer

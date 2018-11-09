@@ -1,5 +1,5 @@
 defmodule Delugex.ProjectionTest do
-  use ExUnit.Case, async: true
+  use Delugex.Case
   alias Delugex.Projection
 
   defmodule Person do
@@ -44,9 +44,8 @@ defmodule Delugex.ProjectionTest do
     test "applies list of events to entity using given projection" do
       events = [%Nopped{}, %Renamed{name: "jerry"}, %Renamed{name: "tom"}]
 
-      entity =
-        %Person{name: "blah"}
-        |> Projection.apply_all(PersonProjection, events)
+      entity = %Person{name: "blah"}
+      entity = Projection.apply_all(PersonProjection, entity, events)
 
       assert entity == %Person{name: "tom"}
     end

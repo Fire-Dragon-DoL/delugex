@@ -1,13 +1,13 @@
 defmodule Delugex.MessageStoreTest do
-  use ExUnit.Case, async: true
+  use Delugex.Case
 
   alias Delugex.MessageStore.Static, as: MessageStore
   alias Delugex.Event.Raw
-  alias Delugex.StreamName
+  alias Delugex.Stream.Name
 
-  @stream_name %StreamName{category: "campaign", identifier: "123", types: []}
-  @empty_stream %StreamName{category: "empty", identifier: nil, types: []}
-  @raw %Event.Raw{
+  @stream_name %Name{category: "campaign", id: "123"}
+  @empty_stream %Name{category: "empty", id: nil}
+  @raw %Raw{
     id: "11111111",
     stream_name: @stream_name,
     type: "Updated",
@@ -29,7 +29,7 @@ defmodule Delugex.MessageStoreTest do
   end
 
   describe "MessageStore.read_last" do
-    test "returns %Event.Raw when stream has events" do
+    test "returns %Raw when stream has events" do
       raw = MessageStore.read_last(@stream_name)
 
       assert raw.position == 2 && raw.id == "uuid"
@@ -43,7 +43,7 @@ defmodule Delugex.MessageStoreTest do
   end
 
   describe "MessageStore.read_batch" do
-    test "returns list of %Event.Raw when stream has events" do
+    test "returns list of %Raw when stream has events" do
       raws = MessageStore.read_batch(@stream_name)
 
       assert length(raws) == 3
@@ -55,7 +55,7 @@ defmodule Delugex.MessageStoreTest do
       assert raws == []
     end
 
-    test "returns list of %Event.Raw with max size of batch_size" do
+    test "returns list of %Raw with max size of batch_size" do
       raws = MessageStore.read_batch(@stream_name, 0, 2)
 
       assert length(raws) == 2

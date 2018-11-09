@@ -1,14 +1,12 @@
-defmodule Delugex.MessageStore.Postgres do
+defmodule Delugex.MessageStore.Mnesia do
   @moduledoc """
-  This is the real implementation of MessageStore. It will execute the needed
-  queries on Postgres through Postgrex by calling the functions provided in
-  [ESP](https://github.com/Carburetor/ESP/tree/master/app/config/functions/stream). You should be able to infer what to write, it's just passing the
+  This is the real implementation of MessageStore.
+  You should be able to infer what to write, it's just passing the
   required arguments to the SQL functions and converting any returned value.
   Whenever a stream name is expected, please use the %StreamName struct and
   make sure to convert it to string.
   """
 
-  use Supervisor
   use Delugex.MessageStore
 
   import Delugex.MessageStore,
@@ -22,62 +20,15 @@ defmodule Delugex.MessageStore.Postgres do
   alias Delugex.Event
   alias Delugex.Event.Raw
   alias Delugex.Event.Metadata
-  alias Delugex.MessageStore.Postgres.Repo
+  alias Delugex.MessageStore.Mnesia.Repo
+  alias Delugex.MessageStore.Mnesia.ExpectedVersionError, as: MnesiaVersionError
 
-  @wrong_version "Wrong expected version:"
-
-  @stream_read_batch_sql """
-  select * from get_stream_messages(
-    _stream_name := $1::varchar,
-    _position    := $2::bigint,
-    _batch_size  := $3::bigint
-  )
-  """
-  @category_read_batch_sql """
-  select * from get_category_messages(
-    _category_name := $1::varchar,
-    _position      := $2::bigint,
-    _batch_size    := $3::bigint
-  )
-  """
-  @stream_read_last_sql "select * from get_last_message(_stream_name := $1)"
-  @write_sql """
-  select * from write_message(
-    _id               := $1::varchar,
-    _stream_name      := $2::varchar,
-    _type             := $3::varchar,
-    _data             := $4::jsonb,
-    _metadata         := $5::jsonb,
-    _expected_version := $6::bigint
-  )
-  """
-  @version_sql "select * from stream_version(_stream_name := $1::varchar)"
-
-  def start_link do
-    Supervisor.start_link(__MODULE__, nil, name: __MODULE__)
+  def start do
+    Repo.create()
   end
 
-  def start_link(_arg), do: start_link()
-
-  @impl Supervisor
-  def init(_arg) do
-    notify_config =
-      Delugex.MessageStore.Postgres.Repo.config()
-      |> Keyword.put(:name, Postgrex.Notifications)
-
-    children = [
-      Delugex.MessageStore.Postgres.Repo,
-      %{
-        id: Postgrex.Notifications,
-        start: {
-          Postgrex.Notifications,
-          :start_link,
-          [notify_config]
-        }
-      }
-    ]
-
-    Supervisor.init(children, strategy: :rest_for_one)
+  def stop do
+    Repo.delete()
   end
 
   @impl Delugex.MessageStore
@@ -95,10 +46,13 @@ defmodule Delugex.MessageStore.Postgres do
     params = encode_event(event)
     params = params ++ [expected_version]
 
-    query(@write_sql, params).rows
-    |> rows_to_single_result
-  rescue
-    error in Postgrex.Error -> as_known_error!(error)
+    case Repo.write_message(params) do
+      {:atomic, version} ->
+        version
+
+      {_, %MnesiaVersionError{} = error} ->
+        as_known_error!(error)
+    end
   end
 
   @impl Delugex.MessageStore
@@ -125,19 +79,13 @@ defmodule Delugex.MessageStore.Postgres do
       |> Stream.with_index()
       |> Stream.map(fn {event, index} ->
         case index do
-          0 -> {event, expected_version}
-          _ -> {event, nil}
+          0 -> encode_event(event) ++ [to_number_version(expected_version)]
+          _ -> encode_event(event) ++ [nil]
         end
       end)
 
-    {:ok, final_version} =
-      Repo.transaction(fn ->
-        Enum.reduce(insertables, nil, fn {event, expected_version}, _ ->
-          write!(event, expected_version)
-        end)
-      end)
-
-    final_version
+    {:atomic, version} = Repo.write_messages(insertables)
+    version
   end
 
   @impl Delugex.MessageStore
@@ -145,11 +93,9 @@ defmodule Delugex.MessageStore.Postgres do
   Retrieve's the last stream by the stream_name (based on greatest position).
   """
   def read_last(stream_name) do
-    stream_name = StreamName.to_string(stream_name)
+    {:atomic, message} = Repo.get_last_message(stream_name)
 
-    query(@stream_read_last_sql, [stream_name]).rows
-    |> rows_to_events
-    |> List.last()
+    row_to_event_raw(message)
   end
 
   @impl Delugex.MessageStore
@@ -158,16 +104,18 @@ defmodule Delugex.MessageStore.Postgres do
   """
   def read_batch(stream_name, position \\ 0, batch_size \\ 10)
       when is_version(position) and is_batch_size(batch_size) do
-    sql =
+    query_fun =
       case StreamName.category?(stream_name) do
-        true -> @category_read_batch_sql
-        false -> @stream_read_batch_sql
+        true -> &Repo.get_category_messages/3
+        false -> &Repo.get_stream_messages/3
       end
 
-    stream_name = StreamName.to_string(stream_name)
+    {
+      :atomic,
+      {records, _cont}
+    } = query_fun.(stream_name, position, batch_size)
 
-    query(sql, [stream_name, position, batch_size]).rows
-    |> rows_to_events
+    rows_to_events(records)
   end
 
   @impl Delugex.MessageStore
@@ -175,11 +123,7 @@ defmodule Delugex.MessageStore.Postgres do
   Retrieves the last message position, or :no_stream if none are present
   """
   def read_version(stream_name) do
-    stream_name = StreamName.to_string(stream_name)
-
-    version =
-      query(@version_sql, [stream_name]).rows
-      |> rows_to_single_result
+    {:atomic, version} = Repo.stream_version(stream_name)
 
     case version do
       nil -> :no_stream
@@ -199,7 +143,7 @@ defmodule Delugex.MessageStore.Postgres do
   """
   def listen(stream_name, opts \\ []) do
     stream_name = StreamName.to_string(stream_name)
-    Repo.listen(stream_name, opts)
+    Repo.Notifications.listen(stream_name, opts)
   end
 
   @impl Delugex.MessageStore
@@ -207,17 +151,12 @@ defmodule Delugex.MessageStore.Postgres do
   Stops notifications
   """
   def unlisten(ref, opts \\ []) do
-    Repo.unlisten(ref, opts)
+    Repo.Notifications.unlisten(ref, opts)
   end
 
   defp to_number_version(:no_stream), do: -1
   defp to_number_version(nil), do: nil
   defp to_number_version(expected_version), do: expected_version
-
-  defp query(raw_sql, parameters) do
-    Repo
-    |> Ecto.Adapters.SQL.query!(raw_sql, parameters)
-  end
 
   defp encode_event(%Event{
          id: id,
@@ -231,8 +170,6 @@ defmodule Delugex.MessageStore.Postgres do
 
     [id, stream_name, type, data, metadata]
   end
-
-  defp rows_to_single_result([[value]]), do: value
 
   defp rows_to_events(rows) do
     rows
@@ -259,7 +196,7 @@ defmodule Delugex.MessageStore.Postgres do
       global_position: global_position,
       data: decode_data(data),
       metadata: decode_metadata(metadata),
-      time: decode_naive_date_time(time)
+      time: time
     }
   end
 
@@ -268,16 +205,12 @@ defmodule Delugex.MessageStore.Postgres do
     |> Map.new(fn {k, v} -> {String.to_existing_atom(k), v} end)
   end
 
+  defp as_known_error!(%MnesiaVersionError{} = error) do
+    raise Delugex.MessageStore.ExpectedVersionError, message: error.message
+  end
+
   defp as_known_error!(error) do
-    message = to_string(error.postgres.message)
-
-    cond do
-      String.starts_with?(message, @wrong_version) ->
-        raise Delugex.MessageStore.ExpectedVersionError, message: message
-
-      true ->
-        raise error
-    end
+    raise error
   end
 
   defp cast_uuid_as_string(id) do
@@ -306,11 +239,6 @@ defmodule Delugex.MessageStore.Postgres do
     map
     |> decode_json()
     |> symbolize()
-  end
-
-  defp decode_naive_date_time(time) do
-    # NaiveDateTime.from_iso8601!(time)
-    time
   end
 
   defp decode_id(id) do

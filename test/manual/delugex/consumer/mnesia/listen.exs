@@ -37,7 +37,7 @@ end
 
 defmodule User.Store do
   use Delugex.Store,
-    message_store: Delugex.MessageStore.Postgres,
+    message_store: Delugex.MessageStore.Mnesia,
     event_transformer: User.Events,
     projection: User.Projection,
     stream_name: Delugex.Stream.Name.new("user")
@@ -46,7 +46,7 @@ end
 defmodule User.Consumer do
   use Delugex.Handler
 
-  use Delugex.Consumer.Postgres,
+  use Delugex.Consumer.Mnesia,
     event_transformer: User.Events,
     stream_name: Delugex.Stream.Name.new("user")
 
@@ -65,17 +65,24 @@ end
 
 defmodule ManualTest do
   def run do
+    :mnesia.start()
+    Delugex.MessageStore.Mnesia.start()
+
     case User.Store.fetch("123") do
       {_, nil} ->
         %User.Events.Created{name: "Francesco"}
         |> Delugex.Event.to_event(Delugex.Stream.Name.new("user", "123"))
-        |> Delugex.MessageStore.Postgres.write!()
+        |> Delugex.MessageStore.Mnesia.write!()
 
       _ ->
         nil
     end
 
     User.Consumer.start_link()
+
+    %User.Events.Created{name: "Francesco"}
+    |> Delugex.Event.to_event(Delugex.Stream.Name.new("user", "123"))
+    |> Delugex.MessageStore.Mnesia.write!()
   end
 end
 

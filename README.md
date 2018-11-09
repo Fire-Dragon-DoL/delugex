@@ -1,10 +1,5 @@
 # Delugex
 
-## TODO
-
-- Database script for Listen on triggers
-- DynamicSupervisor to load listen config from repo config dinamically
-
 Evented system framework
 
 ## Installation

@@ -2,16 +2,11 @@
 # and its dependencies with the aid of the Mix.Config module.
 use Mix.Config
 
-config :logger,
-  backends: [:console],
-  utc_log: true,
-  compile_time_purge_level: :debug
-
-config :delugex, Delugex.MessageStore.Postgres.Repo, pool_size: 15
+config :delugex, Delugex.MessageStore.Postgres.Repo, url: ""
 
 config :delugex, Delugex.MessageStore.Postgres,
   stream_name: [decoder: Delugex.Stream.Name],
-  json: [decoder: Jason]
+  json: [decoder: Jason, encoder: Jason]
 
 import_config "./environment/#{Mix.env()}.exs"
 

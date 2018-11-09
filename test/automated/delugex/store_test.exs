@@ -1,13 +1,12 @@
 defmodule Delugex.StoreTest do
-  use ExUnit.Case, async: true
+  use Delugex.Case
 
   alias Delugex.MessageStore.Static, as: MessageStore
-  alias Delugex.StreamName
+  alias Delugex.Stream.Name
 
   defmodule Person do
     defstruct [:name]
 
-    @behaviour Delugex.Entity
     def new, do: %__MODULE__{name: "<unnamed>"}
   end
 
@@ -27,6 +26,9 @@ defmodule Delugex.StoreTest do
     use Delugex.Projection
 
     @impl Delugex.Projection
+    def apply(nil, event), do: __MODULE__.apply(%Person{}, event)
+
+    @impl Delugex.Projection
     def apply(%Person{} = person, %Events.Updated{name: name}) do
       Map.put(person, :name, name)
     end
@@ -38,10 +40,9 @@ defmodule Delugex.StoreTest do
       entity_builder: Person,
       event_transformer: Events,
       projection: Projection,
-      stream_name: %StreamName{
+      stream_name: %Name{
         category: "campaign",
-        identifier: "123",
-        types: []
+        id: "123"
       }
   end
 

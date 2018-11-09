@@ -37,7 +37,8 @@ defmodule Delugex.MixProject do
       {:ecto, ">= 3.0.0"},
       {:ecto_sql, ">= 3.0.0"},
       {:postgrex, ">= 0.14.0"},
-      {:jason, ">= 1.1.0"}
+      {:jason, ">= 1.1.0"},
+      {:ex2ms, ">= 1.5.0"}
     ]
   end
 

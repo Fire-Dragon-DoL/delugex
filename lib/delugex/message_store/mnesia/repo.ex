@@ -1,39 +1,57 @@
 defmodule Delugex.MessageStore.Mnesia.Repo do
   @moduledoc false
 
+  defmodule InvalidStreamNameError do
+    defexception [:message]
+  end
+
   alias :mnesia, as: Mnesia
   alias Delugex.StreamName
   alias Delugex.MessageStore.Mnesia.ExpectedVersionError
+  require Ex2ms
+
+  @message_attrs [
+    :global_position,
+    # category, id, global, local
+    :stream_all,
+    # category, id, local
+    :stream_local,
+    :id,
+    :stream_name,
+    :stream_category,
+    :stream_id,
+    :type,
+    :position,
+    :data,
+    :metadata,
+    :time
+  ]
+  # + 1 erlang is 1-based, + 1 first term is table name
+  @message_stream_local_idx Enum.find_index(@message_attrs, fn attr ->
+                              attr == :stream_local
+                            end) + 2
 
   def create do
     with {:atomic, _} <-
            Mnesia.create_table(
              Message,
              attributes: [
+               :global_position,
+               # category, id, global, local
+               :stream_all,
+               # category, id, local
+               :stream_local,
                :id,
                :stream_category,
                :stream_id,
-               :stream,
-               :stream_position,
-               :stream_global_position,
-               :stream_all_position,
                :type,
                :position,
-               :global_position,
                :data,
                :metadata,
                :time
              ],
-             index: [
-               :stream_category,
-               :stream_id,
-               :stream,
-               :stream_position,
-               :stream_global_position,
-               :stream_all_position,
-               :position,
-               :global_position
-             ]
+             index: [:id, :stream_all, :stream_local],
+             type: :ordered_set
            ),
          {:atomic, _} <-
            Mnesia.create_table(
@@ -84,16 +102,15 @@ defmodule Delugex.MessageStore.Mnesia.Repo do
           :ok =
             Mnesia.write({
               Message,
+              global,
+              {stream_category, stream_id, global, local},
+              {stream_category, stream_id, local},
               id,
+              encode_stream_name(stream_name),
               stream_category,
               stream_id,
-              {stream_category, stream_id},
-              {stream_category, stream_id, local},
-              {stream_category, stream_id, global},
-              {stream_category, stream_id, local, global},
               to_string(type),
               local,
-              global,
               encode_json(data),
               encode_json(metadata),
               NaiveDateTime.utc_now()
@@ -115,7 +132,83 @@ defmodule Delugex.MessageStore.Mnesia.Repo do
     end)
   end
 
-  def get_category_messages(category_name, position, batch_size) do
+  def get_category_messages(_category_name, _global_pos, 0),
+    do: {[], :"$end_of_table"}
+
+  def get_category_messages(category_name, global_pos, batch_size) do
+    if !StreamName.category?(category_name),
+      do: raise(InvalidStreamNameError, message: "Stream name not a category")
+
+    spec =
+      Ex2ms.fun do
+        {_table, _global, {stream_category, _p_stream_id, global, _p_local},
+         _stream_local, _id, _stream_name, _stream_category, _stream_id, _type,
+         _local, _data, _metadata, _time} = record
+        when stream_category == ^category_name and global >= ^global_pos ->
+          record
+      end
+
+    Mnesia.transaction(fn ->
+      case Mnesia.select(Message, spec, batch_size, :read) do
+        {records, cont} -> {Enum.map(records, &decode/1), cont}
+        :"$end_of_table" -> {[], :"$end_of_table"}
+        error -> error
+      end
+    end)
+  end
+
+  def get_stream_messages(_stream_name, _local_pos, 0),
+    do: {[], :"$end_of_table"}
+
+  def get_stream_messages(stream_name, local_pos, batch_size) do
+    if StreamName.category?(stream_name),
+      do: raise(InvalidStreamNameError, message: "Stream name is a category")
+
+    id = StreamName.id(stream_name)
+    category = StreamName.category(stream_name)
+
+    spec =
+      Ex2ms.fun do
+        {_table, _global, {stream_category, stream_id, _p_global, local},
+         _stream_local, _id, _stream_name, _stream_category, _stream_id, _type,
+         _local, _data, _metadata, _time} = record
+        when stream_category == ^category and stream_id == ^id and
+               local >= ^local_pos ->
+          record
+      end
+
+    Mnesia.transaction(fn ->
+      case Mnesia.select(Message, spec, batch_size, :read) do
+        {records, cont} -> {Enum.map(records, &decode/1), cont}
+        :"$end_of_table" -> {[], :"$end_of_table"}
+        error -> error
+      end
+    end)
+  end
+
+  def get_last_message(stream_name) do
+    if StreamName.category?(stream_name),
+      do: raise(InvalidStreamNameError, message: "Stream name is a category")
+
+    Mnesia.transaction(fn ->
+      id = StreamName.id(stream_name)
+      category = StreamName.category(stream_name)
+      target = to_stream(stream_name)
+
+      records =
+        case get({Message.Position, target}) do
+          nil ->
+            []
+
+          {_, _, pos} ->
+            stream_local = {category, id, pos}
+            Mnesia.index_read(Message, stream_local, @message_stream_local_idx)
+        end
+
+      records
+      |> List.first()
+      |> decode()
+    end)
   end
 
   defp same_version?(_version, nil), do: true
@@ -151,57 +244,39 @@ defmodule Delugex.MessageStore.Mnesia.Repo do
     end)
   end
 
-  defp to_stream(stream_name) do
-    id = StreamName.id(stream_name)
-    category = StreamName.category(stream_name)
-    {category, id}
-  end
+  defp wget(record, default \\ nil), do: get(record, default, :write)
 
-  def wget(record, default \\ nil), do: get(record, default, :write)
-
-  def get({tab, key}, default \\ nil, lock \\ :read) do
+  defp get({tab, key}, default \\ nil, lock \\ :read) do
     case Mnesia.read(tab, key, lock) do
       [] -> default
       [record] -> record
     end
   end
 
-  defp symbolize(map) do
-    map
-    |> Map.new(fn {k, v} -> {String.to_existing_atom(k), v} end)
+  defp decode(nil), do: nil
+
+  defp decode({
+         _table,
+         global_position,
+         _stream_all,
+         _stream_local,
+         id,
+         stream_name,
+         _stream_category,
+         _stream_id,
+         type,
+         position,
+         data,
+         metadata,
+         time
+       }) do
+    [id, stream_name, type, position, global_position, data, metadata, time]
   end
 
-  defp decode_stream_name(text_stream_name) do
-    decoder =
-      __MODULE__
-      |> Delugex.Config.get(:stream_name, [])
-      |> Keyword.get(:decoder, Delugex.Stream.Name)
-
-    decoder.decode(text_stream_name)
-  end
-
-  defp decode_metadata(map) do
-    metadata =
-      map
-      |> decode_json()
-      |> symbolize()
-
-    struct(Metadata, metadata)
-  end
-
-  defp decode_data(map) do
-    map
-    |> decode_json()
-    |> symbolize()
-  end
-
-  defp decode_json(text) do
-    decoder =
-      __MODULE__
-      |> Delugex.Config.get(:json, [])
-      |> Keyword.get(:decoder, Jason)
-
-    decoder.decode!(text)
+  defp to_stream(stream_name) do
+    id = StreamName.id(stream_name)
+    category = StreamName.category(stream_name)
+    {category, id}
   end
 
   defp encode_json(term) do
@@ -211,5 +286,9 @@ defmodule Delugex.MessageStore.Mnesia.Repo do
       |> Keyword.get(:encoder, Jason)
 
     encoder.encode!(term)
+  end
+
+  defp encode_stream_name(term) do
+    StreamName.to_string(term)
   end
 end

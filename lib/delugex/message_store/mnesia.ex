@@ -20,7 +20,6 @@ defmodule Delugex.MessageStore.Mnesia do
   alias Delugex.Event
   alias Delugex.Event.Raw
   alias Delugex.Event.Metadata
-  alias :mnesia, as: Mnesia
   alias Delugex.MessageStore.Mnesia.Repo
 
   def start do

@@ -127,12 +127,14 @@ defmodule Delugex.MessageStore.Mnesia.Repo do
     end)
   end
 
-  def get_category_messages(_category_name, _global_pos, 0),
+  def get_category_messages(_stream_name, _global_pos, 0),
     do: {[], :"$end_of_table"}
 
-  def get_category_messages(category_name, global_pos, batch_size) do
-    if !StreamName.category?(category_name),
+  def get_category_messages(stream_name, global_pos, batch_size) do
+    if !StreamName.category?(stream_name),
       do: raise(InvalidStreamNameError, message: "Stream name not a category")
+
+    category_name = StreamName.category(stream_name)
 
     spec =
       Ex2ms.fun do

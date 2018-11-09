@@ -1,4 +1,4 @@
-defmodule Delugex.Consumer.Postgres do
+defmodule Delugex.Consumer.Mnesia do
   @moduledoc """
   Listen to a stream allowing to handle any incoming events using postgres
   adapter.
@@ -27,7 +27,7 @@ defmodule Delugex.Consumer.Postgres do
 
     opts =
       opts
-      |> Keyword.put(:message_store, Delugex.MessageStore.Postgres)
+      |> Keyword.put(:message_store, Delugex.MessageStore.Mnesia)
       |> Keyword.put_new(:identifier, identifier)
       |> Keyword.put_new(:handler, __CALLER__.module)
 
@@ -63,13 +63,32 @@ defmodule Delugex.Consumer.Postgres do
 
       @impl GenServer
       def handle_info(
-            {:notification, _, _, channel, _payload},
+            {:mnesia_table_event, {:write, event, _}},
             %State{} = state
           ) do
-        Consumer.debug(@ident, fn -> "Notification for stream: #{channel}" end)
+        channel = elem(event, 5)
 
-        GenServer.cast(self(), {:request_events})
+        listener_stream =
+          state
+          |> Map.fetch!(:listener)
+          |> Map.fetch!(:stream_name)
 
+        if Delugex.StreamName.subset?(channel, listener_stream) do
+          Consumer.debug(@ident, fn ->
+            "Notification for stream: #{channel}"
+          end)
+
+          GenServer.cast(self(), {:request_events})
+        end
+
+        {:noreply, state}
+      end
+
+      @impl GenServer
+      def handle_info(
+            {:mnesia_table_event, _},
+            %State{} = state
+          ) do
         {:noreply, state}
       end
 

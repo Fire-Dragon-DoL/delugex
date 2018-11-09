@@ -110,7 +110,11 @@ defmodule Delugex.MessageStore.Mnesia do
         false -> &Repo.get_stream_messages/3
       end
 
-    {records, _cont} = query_fun.(stream_name, position, batch_size)
+    {
+      :atomic,
+      {records, _cont}
+    } = query_fun.(stream_name, position, batch_size)
+
     rows_to_events(records)
   end
 
@@ -139,7 +143,7 @@ defmodule Delugex.MessageStore.Mnesia do
   """
   def listen(stream_name, opts \\ []) do
     stream_name = StreamName.to_string(stream_name)
-    # Repo.listen(stream_name, opts)
+    Repo.Notifications.listen(stream_name, opts)
   end
 
   @impl Delugex.MessageStore
@@ -147,7 +151,7 @@ defmodule Delugex.MessageStore.Mnesia do
   Stops notifications
   """
   def unlisten(ref, opts \\ []) do
-    # Repo.unlisten(ref, opts)
+    Repo.Notifications.unlisten(ref, opts)
   end
 
   defp to_number_version(:no_stream), do: -1

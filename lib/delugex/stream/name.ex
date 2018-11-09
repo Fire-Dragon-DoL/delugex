@@ -95,7 +95,7 @@ defmodule Delugex.Stream.Name do
     defp id_to_string(id), do: "-#{id}"
   end
 
-  defimpl Delugex.StreamName do
+  defimpl Delugex.StreamName.Reader do
     def to_string(%Name{} = stream_name), do: Kernel.to_string(stream_name)
     def category(%Name{category: category}), do: category
     def id(%Name{id: id}), do: id

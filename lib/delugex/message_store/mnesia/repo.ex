@@ -35,21 +35,7 @@ defmodule Delugex.MessageStore.Mnesia.Repo do
     with {:atomic, _} <-
            Mnesia.create_table(
              Message,
-             attributes: [
-               :global_position,
-               # category, id, global, local
-               :stream_all,
-               # category, id, local
-               :stream_local,
-               :id,
-               :stream_category,
-               :stream_id,
-               :type,
-               :position,
-               :data,
-               :metadata,
-               :time
-             ],
+             attributes: @message_attrs,
              index: [:id, :stream_all, :stream_local],
              type: :ordered_set
            ),
@@ -80,7 +66,7 @@ defmodule Delugex.MessageStore.Mnesia.Repo do
     :ok
   end
 
-  def write_message({id, stream_name, type, data, metadata, expected_version}) do
+  def write_message([id, stream_name, type, data, metadata, expected_version]) do
     Mnesia.transaction(fn ->
       Mnesia.write_lock_table(Message)
       Mnesia.write_lock_table(Message.Position)
@@ -118,6 +104,15 @@ defmodule Delugex.MessageStore.Mnesia.Repo do
 
           local
       end
+    end)
+  end
+
+  def write_messages(messages) do
+    Mnesia.transaction(fn ->
+      Enum.reduce(messages, nil, fn message, _ ->
+        {:atomic, version} = write_message(message)
+        version
+      end)
     end)
   end
 

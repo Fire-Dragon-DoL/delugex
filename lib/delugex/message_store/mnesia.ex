@@ -21,6 +21,7 @@ defmodule Delugex.MessageStore.Mnesia do
   alias Delugex.Event.Raw
   alias Delugex.Event.Metadata
   alias Delugex.MessageStore.Mnesia.Repo
+  alias Delugex.MessageStore.Mnesia.ExpectedVersionError, as: MnesiaVersionError
 
   def start do
     Repo.create()
@@ -45,10 +46,13 @@ defmodule Delugex.MessageStore.Mnesia do
     params = encode_event(event)
     params = params ++ [expected_version]
 
-    query(@write_sql, params).rows
-    |> rows_to_single_result
-  rescue
-    error in Postgrex.Error -> as_known_error!(error)
+    case Repo.write_message(params) do
+      {:atomic, version} ->
+        version
+
+      {_, %MnesiaVersionError{} = error} ->
+        as_known_error!(error)
+    end
   end
 
   @impl Delugex.MessageStore
@@ -75,16 +79,13 @@ defmodule Delugex.MessageStore.Mnesia do
       |> Stream.with_index()
       |> Stream.map(fn {event, index} ->
         case index do
-          0 -> {event, to_number_version(expected_version)}
-          _ -> {event, nil}
+          0 -> encode_event(event) ++ [to_number_version(expected_version)]
+          _ -> encode_event(event) ++ [nil]
         end
       end)
 
-    Repo.transaction(fn ->
-      Enum.reduce(insertables, nil, fn {event, expected_version} ->
-        write!(event, expected_version)
-      end)
-    end)
+    {:atomic, version} = Repo.write_messages(insertables)
+    version
   end
 
   @impl Delugex.MessageStore
@@ -92,11 +93,9 @@ defmodule Delugex.MessageStore.Mnesia do
   Retrieve's the last stream by the stream_name (based on greatest position).
   """
   def read_last(stream_name) do
-    stream_name = StreamName.to_string(stream_name)
+    {:atomic, message} = Repo.get_last_message(stream_name)
 
-    query(@stream_read_last_sql, [stream_name]).rows
-    |> rows_to_events
-    |> List.last()
+    row_to_event_raw(message)
   end
 
   @impl Delugex.MessageStore
@@ -105,16 +104,14 @@ defmodule Delugex.MessageStore.Mnesia do
   """
   def read_batch(stream_name, position \\ 0, batch_size \\ 10)
       when is_version(position) and is_batch_size(batch_size) do
-    sql =
+    query_fun =
       case StreamName.category?(stream_name) do
-        true -> @category_read_batch_sql
-        false -> @stream_read_batch_sql
+        true -> &Repo.get_category_messages/3
+        false -> &Repo.get_stream_messages/3
       end
 
-    stream_name = StreamName.to_string(stream_name)
-
-    query(sql, [stream_name, position, batch_size]).rows
-    |> rows_to_events
+    {records, _cont} = query_fun.(stream_name, position, batch_size)
+    rows_to_events(records)
   end
 
   @impl Delugex.MessageStore
@@ -122,11 +119,7 @@ defmodule Delugex.MessageStore.Mnesia do
   Retrieves the last message position, or :no_stream if none are present
   """
   def read_version(stream_name) do
-    stream_name = StreamName.to_string(stream_name)
-
-    version =
-      query(@version_sql, [stream_name]).rows
-      |> rows_to_single_result
+    {:atomic, version} = Repo.stream_version(stream_name)
 
     case version do
       nil -> :no_stream
@@ -146,7 +139,7 @@ defmodule Delugex.MessageStore.Mnesia do
   """
   def listen(stream_name, opts \\ []) do
     stream_name = StreamName.to_string(stream_name)
-    Repo.listen(stream_name, opts)
+    # Repo.listen(stream_name, opts)
   end
 
   @impl Delugex.MessageStore
@@ -154,17 +147,12 @@ defmodule Delugex.MessageStore.Mnesia do
   Stops notifications
   """
   def unlisten(ref, opts \\ []) do
-    Repo.unlisten(ref, opts)
+    # Repo.unlisten(ref, opts)
   end
 
   defp to_number_version(:no_stream), do: -1
   defp to_number_version(nil), do: nil
   defp to_number_version(expected_version), do: expected_version
-
-  defp query(raw_sql, parameters) do
-    Repo
-    |> Ecto.Adapters.SQL.query!(raw_sql, parameters)
-  end
 
   defp encode_event(%Event{
          id: id,
@@ -178,8 +166,6 @@ defmodule Delugex.MessageStore.Mnesia do
 
     [id, stream_name, type, data, metadata]
   end
-
-  defp rows_to_single_result([[value]]), do: value
 
   defp rows_to_events(rows) do
     rows
@@ -206,7 +192,7 @@ defmodule Delugex.MessageStore.Mnesia do
       global_position: global_position,
       data: decode_data(data),
       metadata: decode_metadata(metadata),
-      time: decode_naive_date_time(time)
+      time: time
     }
   end
 
@@ -215,16 +201,12 @@ defmodule Delugex.MessageStore.Mnesia do
     |> Map.new(fn {k, v} -> {String.to_existing_atom(k), v} end)
   end
 
+  defp as_known_error!(%MnesiaVersionError{} = error) do
+    raise Delugex.MessageStore.ExpectedVersionError, message: error.message
+  end
+
   defp as_known_error!(error) do
-    message = to_string(error.postgres.message)
-
-    cond do
-      String.starts_with?(message, @wrong_version) ->
-        raise Delugex.MessageStore.ExpectedVersionError, message: message
-
-      true ->
-        raise error
-    end
+    raise error
   end
 
   defp cast_uuid_as_string(id) do
@@ -255,11 +237,6 @@ defmodule Delugex.MessageStore.Mnesia do
     |> symbolize()
   end
 
-  defp decode_naive_date_time(time) do
-    # NaiveDateTime.from_iso8601!(time)
-    time
-  end
-
   defp decode_id(id) do
     cast_uuid_as_string(id)
   end
@@ -271,8 +248,5 @@ defmodule Delugex.MessageStore.Mnesia do
       |> Keyword.get(:decoder, Jason)
 
     decoder.decode!(text)
-  end
-
-  defp next_global_position do
   end
 end

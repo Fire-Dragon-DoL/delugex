@@ -6,7 +6,7 @@ config :delugex, Delugex.MessageStore.Postgres.Repo, url: ""
 
 config :delugex, Delugex.MessageStore.Postgres,
   stream_name: [decoder: Delugex.Stream.Name],
-  json: [decoder: Jason]
+  json: [decoder: Jason, encoder: Jason]
 
 import_config "./environment/#{Mix.env()}.exs"
 

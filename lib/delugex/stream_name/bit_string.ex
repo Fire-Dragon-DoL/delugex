@@ -1,4 +1,4 @@
-defimpl Delugex.StreamName, for: String do
+defimpl Delugex.StreamName, for: BitString do
   def to_string(stream_name), do: stream_name
 
   def category(stream_name) do

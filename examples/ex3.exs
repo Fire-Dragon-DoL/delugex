@@ -1,9 +1,9 @@
-defprotocol Delugex.MessageStore.Session do
+defprotocol Delugex.MessageStore.Ecto.Postgres.Session do
   @fallback_to_any true
   def get(session)
 end
 
-defimpl Delugex.MessageStore.Session, for: Any do
+defimpl Delugex.MessageStore.Ecto.Postgres.Session, for: Any do
   def get(session), do: session
 end
 
@@ -36,21 +36,39 @@ end
 
 defmodule Delugex.MessageStore.Ecto.Postgres.Database do
   def get(session, opts) do
-    repo = Delugex.MessageStore.Session.get(session)
+    repo = Delugex.MessageStore.Ecto.Postgres.Session.get(session)
     params = extract_stuff_from_opts
     Ecto.Adapters.SQL.query!(session, sql, params)
   end
   # def put
+
+  # use Delugex.MessageStore.Ecto.Postgres.Database, repo: MyRepo
+  #   get(opts)
+end
+
+defmodule Delugex.MessageStore.Ecto.Postgres do
+  use Delugex.MessageStore,
+    database: Delugex.MessageStore.Ecto.Postgres.Database
+
+  # use Delugex.MessageStore.Ecto.Postgres, repo: MyRepo
+  # - read(stream_name, opts)
+  # - write(stream_name, opts)
+  # - write_initial(stream_name, opts)
+  # - write_reply(previous_message)
 end
 
 defmodule MessageStore.Ecto.Postgres do
-  use Delugex.MessageStore,
-    database: Delugex.MessageStore.Ecto.Postgres.Database
+  use Delugex.MessageStore.Ecto.Postgres, repo: MyRepo
+end
+
+defmodule MessageStore.Ecto.Postgres.Database do
+  use Delugex.MessageStore.Ecto.Postgres.Database, repo: MyRepo
 end
 
 alias MessageStore.Ecto.Postgres, as: MessageStore
-MessageStore.read(MyRepo, stream_name, position: nil, batch_size: 1000)
-MessageStore.Database.get(MyRepo, opts)
+alias MessageStore.Ecto.Postgres.Database
+MessageStore.read(stream_name, position: nil, batch_size: 1000)
+Database.get(opts)
 
 # Consumer
 
@@ -61,10 +79,18 @@ defmodule Delugex.Consumer do
   #   init accepts session argument (will be Repo), stream_name, condition
 end
 
-defmodule Consumer do
-  use Delugex.Consumer, database: MessageStore.Database, identifier: "foo"
+defmodule Delugex.Consumer.Ecto.Postgres do
+  # use Delugex.Consumer.Ecto.Postgres, repo: MyRepo, identifier: OPTIONAL
+  #   use Delugex.Consumer,
+  #     identifier: OPTIONAL,
+  #     database: Delugex.MessageStore.Ecto.Postgres.Database
+  #   init accepts stream_name, condition
 end
 
-Consumer.start_link(MyRepo, stream_name, condition: condition)
+defmodule Consumer do
+  use Delugex.Consumer.Ecto.Postgres, identifier: "foo", repo: MyRepo
+end
+
+Consumer.start_link(stream_name, condition: condition)
 
 # TODO: Transform to/from json, defevent, MessageData.Read, MessageData.Write
